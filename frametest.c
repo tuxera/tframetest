@@ -21,6 +21,18 @@ int main(int argc, char **argv)
 	}
 
 	printf("Profile name: %s\n", frm->profile.name);
+	{
+		FILE *tmp = fopen("frame1", "w+");
+		if (!tmp) {
+			fprintf(stderr, "Can't create frame file\n");
+			return 1;
+		}
+		if (!frame_write(tmp, frm)) {
+			fprintf(stderr, "Can't write to file\n");
+			return 1;
+		}
+		fclose(tmp);
+	}
 
 	return 0;
 }

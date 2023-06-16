@@ -21,3 +21,10 @@ frame_t *frame_gen(profile_t profile)
 
 	return res;
 }
+
+size_t frame_write(FILE *f, frame_t *frame)
+{
+	if (!f || !frame)
+		return 0;
+	return fwrite(frame->data, frame->size, 1, f);
+}
