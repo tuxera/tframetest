@@ -28,4 +28,16 @@ uint64_t tester_start(void);
 uint64_t tester_stop(uint64_t);
 test_result_t tester_run_write(const char *path, frame_t *frame, size_t frames);
 
+static inline int test_result_aggregate(test_result_t *dst, test_result_t *src)
+{
+	if (!dst || !src)
+		return 1;
+
+	dst->frames_written += src->frames_written;
+	dst->bytes_written += src->bytes_written;
+	dst->time_taken_ns += src->time_taken_ns;
+
+	return 0;
+}
+
 #endif

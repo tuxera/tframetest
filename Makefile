@@ -1,5 +1,5 @@
 #CFLAGS=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors -Wsequence-point -Wstrict-overflow=5 -Wnull-dereference
-CFLAGS=-g -std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
+CFLAGS=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
 HEADERS := $(wildcard *.h)
 
 all: frametest

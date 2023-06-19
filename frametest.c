@@ -3,6 +3,7 @@
  */
 
 #include <getopt.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,13 +40,86 @@ typedef struct opts_t {
 	size_t write_size;
 	profile_t profile;
 
+	frame_t *frm;
+
 	size_t threads;
 	size_t frames;
 } opts_t;
 
+typedef struct thread_info_t {
+	size_t id;
+	pthread_t thread;
+	const opts_t *opts;
+	test_result_t res;
+} thread_info_t;
+
+void *run_test_thread(void *arg)
+{
+	thread_info_t *info = (thread_info_t *)arg;
+	size_t frames;
+
+	if (!arg)
+		return NULL;
+	if (!info->opts)
+		return NULL;
+
+	frames = info->opts->frames / info->opts->threads;
+	if (info->id == 0)
+		frames += info->opts->frames % info->opts->threads;
+	info->res = tester_run_write(".", info->opts->frm, frames);
+
+	return NULL;
+}
+
+int run_test_threads(const opts_t *opts)
+{
+	size_t i;
+	int res;
+	thread_info_t *threads;
+	test_result_t tres = {0};
+
+	threads = calloc(opts->threads, sizeof(*threads));
+	if (!threads)
+		return 1;
+
+	for (i = 0; i < opts->threads; i++) {
+		int res;
+
+		threads[i].id = i;
+		threads[i].opts = opts;
+		res = pthread_create(&threads[i].thread, NULL,
+				&run_test_thread, (void*)&threads[i]);
+		if (res) {
+			size_t j;
+			void *ret;
+
+			for (j = 0; j < i; j++)
+				pthread_cancel(threads[j].thread);
+			for (j = 0; j < i; j++)
+				pthread_join(threads[j].thread, &ret);
+			return 1;
+		}
+	}
+
+	res = 0;
+	for (i = 0; i < opts->threads; i++) {
+		void *ret;
+
+		if (pthread_join(threads[i].thread, &ret))
+			res = 1;
+		if (ret)
+			res = 1;
+
+		if (test_result_aggregate(&tres, &threads[i].res))
+		    res = 1;
+	}
+	if (!res)
+		print_results(&tres);
+	return res;
+}
+
 int run_tests(opts_t *opts)
 {
-	frame_t *frm;
 
 	if (!opts)
 		return 1;
@@ -68,19 +142,24 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
+	printf("Profile: %s\n", opts->profile.name);
 
-	frm = frame_gen(opts->profile);
-	if (!frm) {
+	opts->frm = frame_gen(opts->profile);
+	if (!opts->frm) {
 		fprintf(stderr, "Can't allocate frame\n");
 		return 1;
 	}
 
 	if (opts->mode & TEST_WRITE) {
-		test_result_t res;
+		if (opts->threads == 1) {
+			test_result_t res;
 
-		res = tester_run_write(".", frm, opts->frames);
-		print_results(&res);
+			res = tester_run_write(".", opts->frm, opts->frames);
+			print_results(&res);
+		} else
+			run_test_threads(opts);
 	}
+	frame_destroy(opts->frm);
 
 	return 0;
 }
@@ -192,15 +271,16 @@ int main(int argc, char **argv)
 
 		c = getopt_long(argc, argv, "rw:p:lt:n:",
 				long_opts, &opt_index);
-		printf("da: %c %d, %d\n", c, c, opt_index);
 		if (c == -1)
 			break;
 		switch (c) {
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
+#if 0
 				fprintf(stderr, "Invalid argument for option "
 						"%c: %s\n", c, optarg);
 				return 1;
+#endif
 			}
 			opts.mode |= TEST_WRITE;
 			break;
@@ -236,12 +316,6 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	printf("mode:%s%s\n",
-		opts.mode & TEST_WRITE ? " write" : "",
-		opts.mode & TEST_READ ? " read" : "");
-	printf("opt1: %lu\n", opts.write_size);
-	printf("opt2: %u\n", (unsigned int)opts.prof);
-	printf("opt3: %lu\n", opts.threads);
 
 	return run_tests(&opts);
 }

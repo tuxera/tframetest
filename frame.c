@@ -30,6 +30,15 @@ frame_t *frame_gen(profile_t profile)
 	return res;
 }
 
+void frame_destroy(frame_t *frame)
+{
+	if (!frame)
+		return;
+	if (frame->data)
+		free(frame->data);
+	free(frame);
+}
+
 size_t frame_fill(frame_t *frame, char val)
 {
 	size_t i;

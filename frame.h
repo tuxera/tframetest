@@ -12,6 +12,7 @@ typedef struct frame_t {
 } frame_t;
 
 frame_t *frame_gen(profile_t profile);
+void frame_destroy(frame_t *frame);
 size_t frame_fill(frame_t *frame, char val);
 
 size_t frame_write(FILE *f, frame_t *frame);
