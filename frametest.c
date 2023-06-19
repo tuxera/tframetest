@@ -27,28 +27,6 @@ void print_results(const test_result_t *res)
 			/ res->time_taken_ns);
 }
 
-int run_tests(void)
-{
-	profile_t prof;
-	frame_t *frm;
-	test_result_t res;
-
-	prof = profile_get_by_name("2K-24bit");
-
-	frm = frame_gen(prof);
-	if (!frm) {
-		fprintf(stderr, "Can't allocate frame\n");
-		return 1;
-	}
-
-	printf("Profile name: %s\n", frm->profile.name);
-	res = tester_run_write(".", frm, 200);
-
-	print_results(&res);
-
-	return 0;
-}
-
 enum TestMode {
 	TEST_WRITE = 1 << 0,
 	TEST_READ  = 1 << 1,
@@ -60,7 +38,52 @@ typedef struct opts_t {
 	enum ProfileType prof;
 	size_t write_size;
 	profile_t profile;
+
+	size_t threads;
+	size_t frames;
 } opts_t;
+
+int run_tests(opts_t *opts)
+{
+	frame_t *frm;
+
+	if (!opts)
+		return 1;
+
+	if (opts->profile.prof == PROF_INVALID &&
+			opts->prof != PROF_INVALID) {
+		opts->profile = profile_get_by_type(opts->prof);
+	}
+	if (opts->profile.prof == PROF_INVALID && opts->write_size) {
+		opts->profile.prof = PROF_CUSTOM;
+		opts->profile.name = "custom";
+
+		/* Faking the size */
+		opts->profile.width = opts->write_size;
+		opts->profile.bytes_per_pixel = 1;
+		opts->profile.height = 1;
+		opts->profile.header_size = 0;
+	}
+	if (opts->profile.prof == PROF_INVALID) {
+		fprintf(stderr, "No test profile found!\n");
+		return 1;
+	}
+
+	frm = frame_gen(opts->profile);
+	if (!frm) {
+		fprintf(stderr, "Can't allocate frame\n");
+		return 1;
+	}
+
+	if (opts->mode & TEST_WRITE) {
+		test_result_t res;
+
+		res = tester_run_write(".", frm, opts->frames);
+		print_results(&res);
+	}
+
+	return 0;
+}
 
 int opt_parse_write(opts_t *opt, const char *arg)
 {
@@ -107,6 +130,34 @@ int opt_parse_profile(opts_t *opt, const char *arg)
 	return 0;
 }
 
+int opt_parse_threads(opts_t *opt, const char *arg)
+{
+	char *endp = NULL;
+
+	if (!arg)
+		return 1;
+
+	opt->threads = strtoll(arg, &endp, 10);
+	if (endp && *endp == 0 && opt->threads)
+		return 0;
+
+	return 1;
+}
+
+int opt_parse_num_threads(opts_t *opt, const char *arg)
+{
+	char *endp = NULL;
+
+	if (!arg)
+		return 1;
+
+	opt->frames = strtoll(arg, &endp, 10);
+	if (endp && *endp == 0 && opt->frames)
+		return 0;
+
+	return 1;
+}
+
 void list_profiles(void)
 {
 	size_t cnt = profile_count();
@@ -127,15 +178,19 @@ int main(int argc, char **argv)
 		{ "read", no_argument, 0, 'r' },
 		{ "profile", required_argument, 0, 'p' },
 		{ "list-profiles", no_argument, 0, 'l' },
+		{ "threads", required_argument, 0, 't' },
+		{ "num-frames", required_argument, 0, 'n' },
 		{ 0, 0, 0, 0 },
 	};
 	opts_t opts = {0};
 
+	opts.threads = 1;
+	opts.frames = 1800;
 	while (1) {
 		int c;
 		int opt_index;
 
-		c = getopt_long(argc, argv, "rw:p:l",
+		c = getopt_long(argc, argv, "rw:p:lt:n:",
 				long_opts, &opt_index);
 		printf("da: %c %d, %d\n", c, c, opt_index);
 		if (c == -1)
@@ -159,6 +214,20 @@ int main(int argc, char **argv)
 				return 1;
 			}
 			break;
+		case 't':
+			if (opt_parse_threads(&opts, optarg)) {
+				fprintf(stderr, "Invalid argument for option "
+						"%c: %s\n", c, optarg);
+				return 1;
+			}
+			break;
+		case 'n':
+			if (opt_parse_num_threads(&opts, optarg)) {
+				fprintf(stderr, "Invalid argument for option "
+						"%c: %s\n", c, optarg);
+				return 1;
+			}
+			break;
 		case 'l':
 			list_profiles();
 			return 0;
@@ -172,8 +241,7 @@ int main(int argc, char **argv)
 		opts.mode & TEST_READ ? " read" : "");
 	printf("opt1: %lu\n", opts.write_size);
 	printf("opt2: %u\n", (unsigned int)opts.prof);
+	printf("opt3: %lu\n", opts.threads);
 
-	return 0;
-
-	return run_tests();
+	return run_tests(&opts);
 }
