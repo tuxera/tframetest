@@ -84,25 +84,21 @@ typedef struct thread_info_t {
 	pthread_t thread;
 	const opts_t *opts;
 	test_result_t res;
+	size_t start_frame;
+	size_t frames;
 } thread_info_t;
 
 void *run_write_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
-	size_t frames;
-	size_t start_frame;
 
 	if (!arg)
 		return NULL;
 	if (!info->opts)
 		return NULL;
 
-	frames = info->opts->frames / info->opts->threads;
-	start_frame = frames * info->id;
-	if (info->id == info->opts->threads - 1)
-		frames += info->opts->frames % info->opts->threads;
 	info->res = tester_run_write(info->opts->path, info->opts->frm,
-			start_frame, frames);
+			info->start_frame, info->frames);
 
 	return NULL;
 }
@@ -110,22 +106,37 @@ void *run_write_test_thread(void *arg)
 void *run_read_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
-	size_t frames;
-	size_t start_frame;
 
 	if (!arg)
 		return NULL;
 	if (!info->opts)
 		return NULL;
 
-	frames = info->opts->frames / info->opts->threads;
-	start_frame = frames * info->id;
-	if (info->id == info->opts->threads - 1)
-		frames += info->opts->frames % info->opts->threads;
 	info->res = tester_run_read(info->opts->path, info->opts->frm,
-			start_frame, frames);
+			info->start_frame, info->frames);
 
 	return NULL;
+}
+
+void calculate_frame_range(thread_info_t *threads, const opts_t *opts)
+{
+	size_t i;
+	uint64_t start_frame;
+	uint64_t frames_per_thread;
+	uint64_t frames_left;
+
+	frames_per_thread = opts->frames / opts->threads;
+	frames_left = opts->frames % opts->threads;
+	start_frame = 0;
+	for (i = 0; i < opts->threads; i++) {
+		threads[i].start_frame = start_frame;
+		threads[i].frames = frames_per_thread;
+		if (frames_left) {
+			++threads[i].frames;
+			--frames_left;
+		}
+		start_frame += threads[i].frames;
+	}
 }
 
 int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
@@ -139,6 +150,8 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 	threads = calloc(opts->threads, sizeof(*threads));
 	if (!threads)
 		return 1;
+
+	calculate_frame_range(threads, opts);
 
 	start = tester_start();
 	for (i = 0; i < opts->threads; i++) {
