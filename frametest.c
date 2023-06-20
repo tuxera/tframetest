@@ -43,6 +43,7 @@ typedef struct opts_t {
 	profile_t profile;
 
 	frame_t *frm;
+	const char *path;
 
 	size_t threads;
 	size_t frames;
@@ -55,7 +56,7 @@ typedef struct thread_info_t {
 	test_result_t res;
 } thread_info_t;
 
-void *run_test_thread(void *arg)
+void *run_write_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
 	size_t frames;
@@ -70,12 +71,34 @@ void *run_test_thread(void *arg)
 	start_frame = frames * info->id;
 	if (info->id == info->opts->threads - 1)
 		frames += info->opts->frames % info->opts->threads;
-	info->res = tester_run_write(".", info->opts->frm, start_frame, frames);
+	info->res = tester_run_write(info->opts->path, info->opts->frm,
+			start_frame, frames);
 
 	return NULL;
 }
 
-int run_test_threads(const opts_t *opts)
+void *run_read_test_thread(void *arg)
+{
+	thread_info_t *info = (thread_info_t *)arg;
+	size_t frames;
+	size_t start_frame;
+
+	if (!arg)
+		return NULL;
+	if (!info->opts)
+		return NULL;
+
+	frames = info->opts->frames / info->opts->threads;
+	start_frame = frames * info->id;
+	if (info->id == info->opts->threads - 1)
+		frames += info->opts->frames % info->opts->threads;
+	info->res = tester_run_read(info->opts->path, info->opts->frm,
+			start_frame, frames);
+
+	return NULL;
+}
+
+int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
 {
 	size_t i;
 	int res;
@@ -91,8 +114,13 @@ int run_test_threads(const opts_t *opts)
 
 		threads[i].id = i;
 		threads[i].opts = opts;
+#if 0
 		res = pthread_create(&threads[i].thread, NULL,
 				&run_test_thread, (void*)&threads[i]);
+#else
+		res = pthread_create(&threads[i].thread, NULL,
+				tfunc, (void*)&threads[i]);
+#endif
 		if (res) {
 			size_t j;
 			void *ret;
@@ -114,6 +142,9 @@ int run_test_threads(const opts_t *opts)
 		if (ret)
 			res = 1;
 
+#if 0
+		print_results(&threads[i].res);
+#endif
 		if (test_result_aggregate(&tres, &threads[i].res))
 		    res = 1;
 	}
@@ -155,13 +186,11 @@ int run_tests(opts_t *opts)
 	}
 
 	if (opts->mode & TEST_WRITE) {
-		if (opts->threads == 1) {
-			test_result_t res;
-
-			res = tester_run_write(".", opts->frm, 0, opts->frames);
-			print_results(&res);
-		} else
-			run_test_threads(opts);
+		run_test_threads(opts, &run_write_test_thread);
+	}
+	if (opts->mode & TEST_READ) {
+		/* TODO */
+		run_test_threads(opts, &run_read_test_thread);
 	}
 	frame_destroy(opts->frm);
 
@@ -264,40 +293,85 @@ void list_profiles(void)
 	}
 }
 
+struct long_opt_desc {
+	const char *name;
+	const char *desc;
+};
+static struct option long_opts[] = {
+	{ "write", required_argument, 0, 'w' },
+	{ "read", no_argument, 0, 'r' },
+	{ "profile", required_argument, 0, 'p' },
+	{ "list-profiles", no_argument, 0, 'l' },
+	//{ "threads", required_argument, 0, 't' },
+	{ "threads", required_argument, 0, 0 },
+	{ "num-frames", required_argument, 0, 'n' },
+	{ "help", no_argument, 0, 'h' },
+	{ 0, 0, 0, 0 },
+};
+static size_t long_opts_cnt = sizeof(long_opts) / sizeof(long_opts[0]);
+static struct long_opt_desc long_opt_descs[] = {
+	{ "write", "Perform write tests"},
+	{ "read", "Perform read tests"},
+	{ "profile", "Select frame profile to use"},
+	{ "list-profiles", "List available profiles"},
+	{ "threads", "Use number of threads (default 1)"},
+	{ "num-frames", "Write number of frames (default 1800)" },
+	{ "help", "Display this help" },
+	{ 0, 0 },
+};
+
+#define DESC_POS 30
+void usage(const char *name)
+{
+	size_t i;
+
+	fprintf(stderr, "Usage: %s [options] path\n", name);
+	fprintf(stderr, "Options:\n");
+	for (i = 0; i < long_opts_cnt; i++) {
+		int p = 8;
+
+		if (!long_opts[i].name)
+			break;
+		if (long_opts[i].val)
+			fprintf(stderr, "    -%c, ", long_opts[i].val);
+		else
+			fprintf(stderr, "        ");
+
+		p += strlen(long_opts[i].name);
+		fprintf(stderr, "--%s", long_opts[i].name);
+
+		if (p < DESC_POS)
+			p = DESC_POS - p;
+		else
+			p = 1;
+		fprintf(stderr, "%*s%s\n", p, " ",
+				long_opt_descs[i].desc);
+	}
+}
+
 int main(int argc, char **argv)
 {
-	static struct option long_opts[] = {
-		{ "write", required_argument, 0, 'w' },
-		{ "read", no_argument, 0, 'r' },
-		{ "profile", required_argument, 0, 'p' },
-		{ "list-profiles", no_argument, 0, 'l' },
-		{ "threads", required_argument, 0, 't' },
-		{ "num-frames", required_argument, 0, 'n' },
-		{ 0, 0, 0, 0 },
-	};
 	opts_t opts = {0};
 
 	opts.threads = 1;
 	opts.frames = 1800;
 	while (1) {
+		int opt_index = 0;
 		int c;
-		int opt_index;
 
-		c = getopt_long(argc, argv, "rw:p:lt:n:",
+		c = getopt_long(argc, argv, "rw:p:lt:n:h",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'h':
+			usage(argv[0]);
+			return 1;
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
 				if (opt_parse_profile(&opts, optarg)) {
 					/* Could not parse profile, just skip */
 				}
-#if 0
-				fprintf(stderr, "Invalid argument for option "
-						"%c: %s\n", c, optarg);
-				return 1;
-#endif
 			}
 			opts.mode |= TEST_WRITE;
 			break;
@@ -332,6 +406,22 @@ int main(int argc, char **argv)
 			printf("GOT: %c\n", c);
 			break;
 		}
+	}
+	if (optind < argc) {
+		int i;
+
+		for (i = optind; i < argc; i++) {
+			if (!opts.path)
+				opts.path = argv[i];
+			else {
+				printf("Unknown option: %s\n", argv[i]);
+				return 1;
+			}
+		}
+	}
+	if (!opts.path) {
+		usage(argv[0]);
+		return 1;
 	}
 
 	return run_tests(&opts);

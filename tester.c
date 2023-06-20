@@ -80,3 +80,23 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	}
 	return res;
 }
+
+test_result_t tester_run_read(const char *path, frame_t *frame,
+		size_t start_frame, size_t frames)
+{
+	test_result_t res = {0};
+	size_t i;
+
+	for (i = start_frame; i < start_frame + frames; i++) {
+
+		// TODO
+#if 0
+		if (!tester_frame_write(&res, path, frame, i)) {
+			break;
+		}
+#endif
+		++res.frames_written;
+		res.bytes_written += frame->size;
+	}
+	return res;
+}
