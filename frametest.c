@@ -23,6 +23,8 @@ void print_results(const test_result_t *res)
 	printf(" time  : %lu\n", res->time_taken_ns);
 	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
 			/ res->time_taken_ns);
+	printf(" B/s   : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
+			/ res->time_taken_ns);
 	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
 			/ (1024 * 1024)
 			/ res->time_taken_ns);

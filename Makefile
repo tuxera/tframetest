@@ -1,13 +1,16 @@
-#CFLAGS=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors -Wsequence-point -Wstrict-overflow=5 -Wnull-dereference
 CFLAGS=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
+LDFLAGS+=-pthread
 HEADERS := $(wildcard *.h)
 
-all: frametest
+all: tframetest
 
-frametest: frametest.o frame.o profile.o tester.o
+tframetest: profile.o frame.o tester.o frametest.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:
-	rm -f *.o frametest
+	rm -f *.o tframetest
+
+.PHONY: all clean

@@ -4,6 +4,7 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
+#include <fcntl.h>
 #include <time.h>
 
 #include "tester.h"
@@ -47,6 +48,7 @@ size_t tester_frame_write(const char *path, frame_t *frame, size_t num)
 	f = fopen(name, "w+");
 	if (!f)
 		return 0;
+	posix_fallocate(fileno(f), 0, frame->size);
 
 	res = frame_write(f, frame);
 
