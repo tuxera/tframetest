@@ -114,13 +114,8 @@ int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
 
 		threads[i].id = i;
 		threads[i].opts = opts;
-#if 0
-		res = pthread_create(&threads[i].thread, NULL,
-				&run_test_thread, (void*)&threads[i]);
-#else
 		res = pthread_create(&threads[i].thread, NULL,
 				tfunc, (void*)&threads[i]);
-#endif
 		if (res) {
 			size_t j;
 			void *ret;
@@ -189,7 +184,6 @@ int run_tests(opts_t *opts)
 		run_test_threads(opts, &run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {
-		/* TODO */
 		run_test_threads(opts, &run_read_test_thread);
 	}
 	frame_destroy(opts->frm);
@@ -302,8 +296,7 @@ static struct option long_opts[] = {
 	{ "read", no_argument, 0, 'r' },
 	{ "profile", required_argument, 0, 'p' },
 	{ "list-profiles", no_argument, 0, 'l' },
-	//{ "threads", required_argument, 0, 't' },
-	{ "threads", required_argument, 0, 0 },
+	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },

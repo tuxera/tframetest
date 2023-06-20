@@ -64,6 +64,31 @@ size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
 	return ret;
 }
 
+size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
+		size_t num)
+{
+	char name[PATH_MAX + 1];
+	uint64_t start;
+	size_t ret;
+	int f;
+
+	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
+	name[PATH_MAX] = 0;
+
+	f = open(name, O_DIRECT | O_RDONLY);
+	if (f <= 0)
+		return 0;
+
+	start = tester_start();
+	/* FIXME: This overwrites the frame in memory! */
+	ret = frame_read(f, frame);
+	res->time_taken_ns += tester_stop(start);
+
+	close(f);
+
+	return ret;
+}
+
 test_result_t tester_run_write(const char *path, frame_t *frame,
 		size_t start_frame, size_t frames)
 {
@@ -89,12 +114,9 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 
 	for (i = start_frame; i < start_frame + frames; i++) {
 
-		// TODO
-#if 0
-		if (!tester_frame_write(&res, path, frame, i)) {
+		if (!tester_frame_read(&res, path, frame, i)) {
 			break;
 		}
-#endif
 		++res.frames_written;
 		res.bytes_written += frame->size;
 	}
