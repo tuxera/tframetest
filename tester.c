@@ -4,7 +4,13 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
+/* For O_DIRECT */
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "tester.h"
 
@@ -13,9 +19,8 @@ static inline uint64_t tester_time(void)
 	struct timespec ts;
 	uint64_t res;
 
-	if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
-		if (clock_gettime(CLOCK_REALTIME, &ts)) {
-			printf("daa\n");
+	if (clock_gettime(CLOCK_REALTIME, &ts)) {
+		if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
 			return 0;
 		}
 	}
@@ -35,39 +40,41 @@ uint64_t tester_stop(uint64_t start)
 	return tester_time() - start;
 }
 
-size_t tester_frame_write(const char *path, frame_t *frame, size_t num)
+size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
+		size_t num)
 {
 	char name[PATH_MAX + 1];
-	FILE *f;
-	size_t res;
+	uint64_t start;
+	size_t ret;
+	int f;
 
 	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
 	name[PATH_MAX] = 0;
 
-	f = fopen(name, "w+");
-	if (!f)
+	f = open(name, O_CREAT | O_DIRECT | O_WRONLY, 0666);
+	if (f <= 0)
 		return 0;
 
-	res = frame_write(f, frame);
+	start = tester_start();
+	ret = frame_write(f, frame);
+	res->time_taken_ns += tester_stop(start);
 
-	fclose(f);
+	close(f);
 
-	return res;
+	return ret;
 }
 
-test_result_t tester_run_write(const char *path, frame_t *frame, size_t frames)
+test_result_t tester_run_write(const char *path, frame_t *frame,
+		size_t start_frame, size_t frames)
 {
 	test_result_t res = {0};
 	size_t i;
 
-	for (i = 0; i < frames; i++) {
-		uint64_t start;
+	for (i = start_frame; i < start_frame + frames; i++) {
 
-		start = tester_start();
-		if (!tester_frame_write(path, frame, i)) {
+		if (!tester_frame_write(&res, path, frame, i)) {
 			break;
 		}
-		res.time_taken_ns += tester_stop(start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
 	}

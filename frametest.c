@@ -59,6 +59,7 @@ void *run_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
 	size_t frames;
+	size_t start_frame;
 
 	if (!arg)
 		return NULL;
@@ -66,9 +67,10 @@ void *run_test_thread(void *arg)
 		return NULL;
 
 	frames = info->opts->frames / info->opts->threads;
-	if (info->id == 0)
+	start_frame = frames * info->id;
+	if (info->id == info->opts->threads - 1)
 		frames += info->opts->frames % info->opts->threads;
-	info->res = tester_run_write(".", info->opts->frm, frames);
+	info->res = tester_run_write(".", info->opts->frm, start_frame, frames);
 
 	return NULL;
 }
@@ -156,7 +158,7 @@ int run_tests(opts_t *opts)
 		if (opts->threads == 1) {
 			test_result_t res;
 
-			res = tester_run_write(".", opts->frm, opts->frames);
+			res = tester_run_write(".", opts->frm, 0, opts->frames);
 			print_results(&res);
 		} else
 			run_test_threads(opts);
@@ -255,6 +257,10 @@ void list_profiles(void)
 		profile_t prof = profile_get_by_index(i);
 
 		printf("  %s\n", prof.name);
+		printf("     %lux%lu, %lu bits, %luB header\n",
+				prof.width, prof.height,
+				prof.bytes_per_pixel * 8,
+				prof.header_size);
 	}
 }
 

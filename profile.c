@@ -1,19 +1,25 @@
 #include <string.h>
 #include "profile.h"
 
+/*
+ * All the "cmp" profiles tries to match similar profile in "frametest" which
+ * uses 4:3 ratio for 2k and 4k with 32 bit colors and 64k header.
+ */
 static profile_t profiles[] = {
 	{ "invalid", PROF_INVALID, 0, 0, 0, 0 },
+	{ "SD-32bit-cmp", PROF_SD, 720, 480, 4, 65536 },
 	{ "SD-24bit", PROF_SD, 720, 480, 3, 0 },
-	{ "HD-24bit", PROF_HD, 1280, 720, 3, 0},
-	{ "FULLHD-24bit", PROF_FULLHD, 1920, 1080, 3, 0},
-	{ "2K-24bit-comp", PROF_2K, 2880, 1440, 3, 370688},
-	{ "2K-24bit", PROF_2K, 2048, 1080, 3, 0},
-	{ "4K-24bit-comp", PROF_4K, 5760, 2880, 3, 1286144},
-	{ "4K-24bit", PROF_4K, 3840, 2160, 3, 0},
-	{ "4K-16bit", PROF_4K, 3840, 2160, 2, 0},
-	{ "4K-32bit", PROF_4K, 3840, 2160, 4, 0},
-	{ "4K-24bit-hdr", PROF_4K, 3840, 2160, 4, 128},
-	{ "8K-24bit", PROF_8K, 7680, 4320, 3, 0},
+	{ "FULLHD-32bit-cmp", PROF_HD, 1920, 1080, 4, 65536 },
+	{ "HD-24bit", PROF_HD, 1280, 720, 3, 0 },
+	{ "FULLHD-24bit", PROF_FULLHD, 1920, 1080, 3, 0 },
+	{ "2K-32bit-cmp", PROF_2K, 2048, 1556, 4, 65536},
+	{ "2K-24bit", PROF_2K, 2048, 1080, 3, 0 },
+	{ "4K-32bit-cmp", PROF_4K, 4096, 3112, 4, 65536 },
+	{ "4K-24bit", PROF_4K, 3840, 2160, 3, 0 },
+	{ "4K-16bit", PROF_4K, 3840, 2160, 2, 0 },
+	{ "4K-32bit", PROF_4K, 3840, 2160, 4, 0 },
+	{ "4K-24bit-hdr", PROF_4K, 3840, 2160, 4, 65536 },
+	{ "8K-24bit", PROF_8K, 7680, 4320, 3, 0 },
 };
 static size_t profile_cnt = sizeof(profiles) / sizeof(profiles[0]);
 

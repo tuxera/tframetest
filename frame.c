@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "frame.h"
 
+#define ALIGN_SIZE 4096
 
 frame_t *frame_gen(profile_t profile)
 {
@@ -20,8 +21,17 @@ frame_t *frame_gen(profile_t profile)
 	res->profile = profile;
 	res->size = profile.width * profile.height * profile.bytes_per_pixel;
 	res->size += profile.header_size;
+	/* Round to direct I/O boundaries */
+	if (res->size & 0xfff) {
+		size_t extra = res->size & 0xfff;
+		res->size += 0x1000 - extra;
+	}
 
-	res->data = malloc(res->size);
+	//res->data = malloc(res->size);
+	if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
+		free(res);
+		return NULL;
+	}
 	if (!res->data) {
 		free(res);
 		return NULL;
@@ -49,28 +59,30 @@ size_t frame_fill(frame_t *frame, char val)
 	return i;
 }
 
-size_t frame_write(FILE *f, frame_t *frame)
+size_t frame_write(int f, frame_t *frame)
 {
 	if (!f || !frame)
 		return 0;
 
 #if 1
-	posix_fallocate(fileno(f), 0, frame->size);
+#if 0
+	posix_fallocate(f, 0, frame->size);
+#endif
 
 	/* Avoid buffered writes if possible */
-	return write(fileno(f), frame->data, frame->size);
+	return write(f, frame->data, frame->size);
 #else
 	return fwrite(frame->data, frame->size, 1, f);
 #endif
 }
 
-size_t frame_read(FILE *f, frame_t *frame)
+size_t frame_read(int f, frame_t *frame)
 {
 	if (!f || !frame)
 		return 0;
 #if 1
 	/* Avoid buffered reads */
-	return read(fileno(f), frame->data, frame->size);
+	return read(f, frame->data, frame->size);
 #else
 	return fread(frame->data, frame->size, 1, f);
 #endif

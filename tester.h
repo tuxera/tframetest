@@ -26,7 +26,8 @@ typedef struct test_result_t {
 
 uint64_t tester_start(void);
 uint64_t tester_stop(uint64_t);
-test_result_t tester_run_write(const char *path, frame_t *frame, size_t frames);
+test_result_t tester_run_write(const char *path, frame_t *frame,
+		size_t start_frame, size_t frames);
 
 static inline int test_result_aggregate(test_result_t *dst, test_result_t *src)
 {
