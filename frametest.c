@@ -167,6 +167,7 @@ int run_tests(opts_t *opts)
 int opt_parse_write(opts_t *opt, const char *arg)
 {
 	char *endp = NULL;
+	size_t sz;
 
 	if (!strcmp(arg, "sd") || !strcmp(arg, "SD")) {
 		opt->prof = PROF_SD;
@@ -188,11 +189,12 @@ int opt_parse_write(opts_t *opt, const char *arg)
 		return 0;
 	}
 
-	opt->write_size = strtoll(arg, &endp, 10);
-	if (endp && *endp == 0 && opt->write_size)
-		return 0;
+	sz = strtoll(arg, &endp, 10);
+	if (!endp || *endp != 0 || !sz)
+		return 1;
+	opt->write_size = sz;
 
-	return 1;
+	return 0;
 }
 
 int opt_parse_profile(opts_t *opt, const char *arg)
@@ -212,29 +214,33 @@ int opt_parse_profile(opts_t *opt, const char *arg)
 int opt_parse_threads(opts_t *opt, const char *arg)
 {
 	char *endp = NULL;
+	size_t th;
 
 	if (!arg)
 		return 1;
 
-	opt->threads = strtoll(arg, &endp, 10);
-	if (endp && *endp == 0 && opt->threads)
-		return 0;
+	th = strtoll(arg, &endp, 10);
+	if (!endp || *endp != 0 || !th)
+		return 1;
+	opt->threads = th;
 
-	return 1;
+	return 0;
 }
 
-int opt_parse_num_threads(opts_t *opt, const char *arg)
+int opt_parse_num_frames(opts_t *opt, const char *arg)
 {
 	char *endp = NULL;
+	size_t th;
 
 	if (!arg)
 		return 1;
 
-	opt->frames = strtoll(arg, &endp, 10);
-	if (endp && *endp == 0 && opt->frames)
-		return 0;
+	th = strtoll(arg, &endp, 10);
+	if (!endp || *endp != 0 || !th)
+		return 1;
+	opt->frames = th;
 
-	return 1;
+	return 0;
 }
 
 void list_profiles(void)
@@ -276,6 +282,9 @@ int main(int argc, char **argv)
 		switch (c) {
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
+				if (opt_parse_profile(&opts, optarg)) {
+					/* Could not parse profile, just skip */
+				}
 #if 0
 				fprintf(stderr, "Invalid argument for option "
 						"%c: %s\n", c, optarg);
@@ -302,7 +311,7 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'n':
-			if (opt_parse_num_threads(&opts, optarg)) {
+			if (opt_parse_num_frames(&opts, optarg)) {
 				fprintf(stderr, "Invalid argument for option "
 						"%c: %s\n", c, optarg);
 				return 1;

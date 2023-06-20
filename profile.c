@@ -22,6 +22,9 @@ size_t profile_count(void)
 
 profile_t profile_get_by_name(const char *name)
 {
+	if (!name)
+		return profiles[0];
+
 	for (size_t i = 1; i < profile_cnt; i++) {
 		if (strcmp(profiles[i].name, name) == 0)
 			return profiles[i];
