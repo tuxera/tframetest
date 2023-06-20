@@ -1,4 +1,4 @@
-CFLAGS=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
+CFLAGS+=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
 LDFLAGS+=-pthread
 HEADERS := $(wildcard *.h)
 

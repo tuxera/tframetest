@@ -3,6 +3,7 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -50,11 +51,12 @@ size_t frame_fill(frame_t *frame, char val)
 
 size_t frame_write(FILE *f, frame_t *frame)
 {
-	// TODO Prealloc?
 	if (!f || !frame)
 		return 0;
 
 #if 1
+	posix_fallocate(fileno(f), 0, frame->size);
+
 	/* Avoid buffered writes if possible */
 	return write(fileno(f), frame->data, frame->size);
 #else
