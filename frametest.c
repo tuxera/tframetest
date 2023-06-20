@@ -12,15 +12,14 @@
 #include "frame.h"
 #include "tester.h"
 
-void print_results(const test_result_t *res)
+void print_results(const char *tcase, const test_result_t *res)
 {
 	if (!res)
 		return;
-
 	if (!res->time_taken_ns)
 		return;
 
-	printf("Result:\n");
+	printf("Results %s:\n", tcase);
 	printf(" frames: %lu\n", res->frames_written);
 	printf(" bytes : %lu\n", res->bytes_written);
 	printf(" time  : %lu\n", res->time_taken_ns);
@@ -31,6 +30,32 @@ void print_results(const test_result_t *res)
 	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
+}
+
+void print_header_csv(void)
+{
+	printf(";case,frames,bytes,time,fps,bps,mibps\n");
+}
+
+void print_results_csv(const char *tcase, const test_result_t *res)
+{
+	if (!res)
+		return;
+	if (!res->time_taken_ns)
+		return;
+
+	printf("\"%s\",", tcase);
+	printf("%lu,", res->frames_written);
+	printf("%lu,", res->bytes_written);
+	printf("%lu,", res->time_taken_ns);
+	printf("%lf,", (double)res->frames_written * SEC_IN_NS
+			/ res->time_taken_ns);
+	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+			/ res->time_taken_ns);
+	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+			/ (1024 * 1024)
+			/ res->time_taken_ns);
+	printf("\n");
 }
 
 enum TestMode {
@@ -50,6 +75,8 @@ typedef struct opts_t {
 
 	size_t threads;
 	size_t frames;
+
+	int csv;
 } opts_t;
 
 typedef struct thread_info_t {
@@ -101,7 +128,7 @@ void *run_read_test_thread(void *arg)
 	return NULL;
 }
 
-int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
+int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 {
 	size_t i;
 	int res;
@@ -149,8 +176,12 @@ int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
 		    res = 1;
 	}
 	tres.time_taken_ns = tester_stop(start);
-	if (!res)
-		print_results(&tres);
+	if (!res) {
+		if (opts->csv)
+			print_results_csv(tst, &tres);
+		else
+			print_results(tst, &tres);
+	}
 	return res;
 }
 
@@ -178,7 +209,8 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
-	printf("Profile: %s\n", opts->profile.name);
+	if (!opts->csv)
+		printf("Profile: %s\n", opts->profile.name);
 
 	opts->frm = frame_gen(opts->profile);
 	if (!opts->frm) {
@@ -186,11 +218,13 @@ int run_tests(opts_t *opts)
 		return 1;
 	}
 
+	if (opts->csv)
+		print_header_csv();
 	if (opts->mode & TEST_WRITE) {
-		run_test_threads(opts, &run_write_test_thread);
+		run_test_threads("write", opts, &run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {
-		run_test_threads(opts, &run_read_test_thread);
+		run_test_threads("read", opts, &run_read_test_thread);
 	}
 	frame_destroy(opts->frm);
 
@@ -304,6 +338,7 @@ static struct option long_opts[] = {
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
+	{ "csv", no_argument, 0, 'c' },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -315,6 +350,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "list-profiles", "List available profiles"},
 	{ "threads", "Use number of threads (default 1)"},
 	{ "num-frames", "Write number of frames (default 1800)" },
+	{ "csv", "Output results in CSV format" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
@@ -358,7 +394,7 @@ int main(int argc, char **argv)
 		int opt_index = 0;
 		int c;
 
-		c = getopt_long(argc, argv, "rw:p:lt:n:h",
+		c = getopt_long(argc, argv, "rw:p:lt:n:hc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -366,6 +402,9 @@ int main(int argc, char **argv)
 		case 'h':
 			usage(argv[0]);
 			return 1;
+		case 'c':
+			opts.csv = 1;
+			break;
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
 				if (opt_parse_profile(&opts, optarg)) {
