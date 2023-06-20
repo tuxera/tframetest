@@ -12,52 +12,6 @@
 #include "frame.h"
 #include "tester.h"
 
-void print_results(const char *tcase, const test_result_t *res)
-{
-	if (!res)
-		return;
-	if (!res->time_taken_ns)
-		return;
-
-	printf("Results %s:\n", tcase);
-	printf(" frames: %lu\n", res->frames_written);
-	printf(" bytes : %lu\n", res->bytes_written);
-	printf(" time  : %lu\n", res->time_taken_ns);
-	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf(" B/s   : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
-			/ res->time_taken_ns);
-	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
-			/ (1024 * 1024)
-			/ res->time_taken_ns);
-}
-
-void print_header_csv(void)
-{
-	printf(";case,frames,bytes,time,fps,bps,mibps\n");
-}
-
-void print_results_csv(const char *tcase, const test_result_t *res)
-{
-	if (!res)
-		return;
-	if (!res->time_taken_ns)
-		return;
-
-	printf("\"%s\",", tcase);
-	printf("%lu,", res->frames_written);
-	printf("%lu,", res->bytes_written);
-	printf("%lu,", res->time_taken_ns);
-	printf("%lf,", (double)res->frames_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
-			/ res->time_taken_ns);
-	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
-			/ (1024 * 1024)
-			/ res->time_taken_ns);
-	printf("\n");
-}
-
 enum TestMode {
 	TEST_WRITE = 1 << 0,
 	TEST_READ  = 1 << 1,
@@ -87,6 +41,55 @@ typedef struct thread_info_t {
 	size_t start_frame;
 	size_t frames;
 } thread_info_t;
+
+void print_results(const char *tcase, const test_result_t *res)
+{
+	if (!res)
+		return;
+	if (!res->time_taken_ns)
+		return;
+
+	printf("Results %s:\n", tcase);
+	printf(" frames: %lu\n", res->frames_written);
+	printf(" bytes : %lu\n", res->bytes_written);
+	printf(" time  : %lu\n", res->time_taken_ns);
+	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
+			/ res->time_taken_ns);
+	printf(" B/s   : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
+			/ res->time_taken_ns);
+	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
+			/ (1024 * 1024)
+			/ res->time_taken_ns);
+}
+
+void print_header_csv(void)
+{
+	printf(";case,profile,threads,frames,bytes,time,fps,bps,mibps\n");
+}
+
+void print_results_csv(const char *tcase, const opts_t *opts,
+		const test_result_t *res)
+{
+	if (!res)
+		return;
+	if (!res->time_taken_ns)
+		return;
+
+	printf("\"%s\",", tcase);
+	printf("\"%s\",", opts->profile.name);
+	printf("%lu,", opts->threads);
+	printf("%lu,", res->frames_written);
+	printf("%lu,", res->bytes_written);
+	printf("%lu,", res->time_taken_ns);
+	printf("%lf,", (double)res->frames_written * SEC_IN_NS
+			/ res->time_taken_ns);
+	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+			/ res->time_taken_ns);
+	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+			/ (1024 * 1024)
+			/ res->time_taken_ns);
+	printf("\n");
+}
 
 void *run_write_test_thread(void *arg)
 {
@@ -191,7 +194,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 	tres.time_taken_ns = tester_stop(start);
 	if (!res) {
 		if (opts->csv)
-			print_results_csv(tst, &tres);
+			print_results_csv(tst, opts, &tres);
 		else
 			print_results(tst, &tres);
 	}
