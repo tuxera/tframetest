@@ -19,8 +19,8 @@ static inline uint64_t tester_time(void)
 	struct timespec ts;
 	uint64_t res;
 
-	if (clock_gettime(CLOCK_REALTIME, &ts)) {
-		if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
+	if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
+		if (clock_gettime(CLOCK_REALTIME, &ts)) {
 			return 0;
 		}
 	}
@@ -57,7 +57,7 @@ size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
 
 	start = tester_start();
 	ret = frame_write(f, frame);
-	res->time_taken_ns += tester_stop(start);
+	res->write_time_taken_ns += tester_stop(start);
 
 	close(f);
 
@@ -82,7 +82,7 @@ size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
 	start = tester_start();
 	/* FIXME: This overwrites the frame in memory! */
 	ret = frame_read(f, frame);
-	res->time_taken_ns += tester_stop(start);
+	res->write_time_taken_ns += tester_stop(start);
 
 	close(f);
 

@@ -21,6 +21,7 @@ typedef struct testset_t {
 typedef struct test_result_t {
 	uint64_t frames_written;
 	uint64_t bytes_written;
+	uint64_t write_time_taken_ns;
 	uint64_t time_taken_ns;
 } test_result_t;
 

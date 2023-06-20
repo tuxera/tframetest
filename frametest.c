@@ -17,6 +17,9 @@ void print_results(const test_result_t *res)
 	if (!res)
 		return;
 
+	if (!res->time_taken_ns)
+		return;
+
 	printf("Result:\n");
 	printf(" frames: %lu\n", res->frames_written);
 	printf(" bytes : %lu\n", res->bytes_written);
@@ -104,11 +107,13 @@ int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
 	int res;
 	thread_info_t *threads;
 	test_result_t tres = {0};
+	uint64_t start;
 
 	threads = calloc(opts->threads, sizeof(*threads));
 	if (!threads)
 		return 1;
 
+	start = tester_start();
 	for (i = 0; i < opts->threads; i++) {
 		int res;
 
@@ -143,6 +148,7 @@ int run_test_threads(const opts_t *opts, void *(*tfunc)(void*))
 		if (test_result_aggregate(&tres, &threads[i].res))
 		    res = 1;
 	}
+	tres.time_taken_ns = tester_stop(start);
 	if (!res)
 		print_results(&tres);
 	return res;
