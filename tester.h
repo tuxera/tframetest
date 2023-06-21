@@ -31,6 +31,7 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 		size_t start_frame, size_t frames);
 test_result_t tester_run_read(const char *path, frame_t *frame,
 		size_t start_frame, size_t frames);
+frame_t *tester_get_frame_read(const char *path);
 
 static inline int test_result_aggregate(test_result_t *dst, test_result_t *src)
 {

@@ -80,13 +80,22 @@ size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
 		return 0;
 
 	start = tester_start();
-	/* FIXME: This overwrites the frame in memory! */
 	ret = frame_read(f, frame);
 	res->write_time_taken_ns += tester_stop(start);
 
 	close(f);
 
 	return ret;
+}
+
+frame_t *tester_get_frame_read(const char *path)
+{
+	char name[PATH_MAX + 1];
+
+	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, 0UL);
+	name[PATH_MAX] = 0;
+
+	return frame_from_file(name);
 }
 
 test_result_t tester_run_write(const char *path, frame_t *frame,

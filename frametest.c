@@ -221,22 +221,33 @@ int run_tests(opts_t *opts)
 		opts->profile.height = 1;
 		opts->profile.header_size = 0;
 	}
-	if (opts->profile.prof == PROF_INVALID) {
+	if ((opts->mode & TEST_WRITE) && opts->profile.prof == PROF_INVALID) {
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
+	}
+	if (opts->mode & TEST_WRITE)
+		opts->frm = frame_gen(opts->profile);
+	else if (opts->mode & TEST_READ) {
+		if (!opts->frm) {
+			opts->frm = tester_get_frame_read(opts->path);
+		}
+		if (!opts->frm)
+			return 1;
+		opts->profile = opts->frm->profile;
 	}
 	if (!opts->csv)
 		printf("Profile: %s\n", opts->profile.name);
 
-	opts->frm = frame_gen(opts->profile);
-	if (!opts->frm) {
-		fprintf(stderr, "Can't allocate frame\n");
-		return 1;
-	}
-
 	if (opts->csv)
 		print_header_csv();
+
 	if (opts->mode & TEST_WRITE) {
+		opts->frm = frame_gen(opts->profile);
+		if (!opts->frm) {
+			fprintf(stderr, "Can't allocate frame\n");
+			return 1;
+		}
+
 		run_test_threads("write", opts, &run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {

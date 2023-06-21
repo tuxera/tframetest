@@ -3,6 +3,8 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,10 +26,9 @@ frame_t *frame_gen(profile_t profile)
 	/* Round to direct I/O boundaries */
 	if (res->size & 0xfff) {
 		size_t extra = res->size & 0xfff;
-		res->size += 0x1000 - extra;
+		res->size += ALIGN_SIZE - extra;
 	}
 
-	//res->data = malloc(res->size);
 	if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
 		free(res);
 		return NULL;
@@ -37,6 +38,48 @@ frame_t *frame_gen(profile_t profile)
 		return NULL;
 	}
 	(void)frame_fill(res, 't');
+
+	return res;
+}
+
+frame_t *frame_from_file(const char *fname)
+{
+	struct stat st;
+	frame_t *res;
+
+	if (stat(fname, &st)) {
+		return NULL;
+	}
+
+	res = calloc(1, sizeof(*res));
+	if (!res)
+		return NULL;
+
+	res->size = st.st_size;
+	if (!res->size) {
+		free(res);
+		return NULL;
+	}
+	/* Round to direct I/O boundaries */
+	if (res->size & 0xfff) {
+		size_t extra = res->size & 0xfff;
+		res->size += ALIGN_SIZE - extra;
+	}
+	res->profile.prof = PROF_CUSTOM;
+	res->profile.name = "custom";
+	res->profile.width = res->size;
+	res->profile.bytes_per_pixel = 1;
+	res->profile.height = 1;
+	res->profile.header_size = 0;
+
+	if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
+		free(res);
+		return NULL;
+	}
+	if (!res->data) {
+		free(res);
+		return NULL;
+	}
 
 	return res;
 }
@@ -80,6 +123,7 @@ size_t frame_read(int f, frame_t *frame)
 {
 	if (!f || !frame)
 		return 0;
+
 #if 1
 	/* Avoid buffered reads */
 	return read(f, frame->data, frame->size);
