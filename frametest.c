@@ -30,7 +30,8 @@ typedef struct opts_t {
 	size_t threads;
 	size_t frames;
 
-	int csv;
+	unsigned int csv : 1;
+	unsigned int no_csv_header : 1;
 } opts_t;
 
 typedef struct thread_info_t {
@@ -238,7 +239,7 @@ int run_tests(opts_t *opts)
 	if (!opts->csv)
 		printf("Profile: %s\n", opts->profile.name);
 
-	if (opts->csv)
+	if (opts->csv && !opts->no_csv_header)
 		print_header_csv();
 
 	if (opts->mode & TEST_WRITE) {
@@ -366,6 +367,7 @@ static struct option long_opts[] = {
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
 	{ "csv", no_argument, 0, 'c' },
+	{ "no-csv-header", no_argument, 0, 0 },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -378,6 +380,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "threads", "Use number of threads (default 1)"},
 	{ "num-frames", "Write number of frames (default 1800)" },
 	{ "csv", "Output results in CSV format" },
+	{ "no-csv-header", "Do not print CSV header" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
@@ -425,7 +428,12 @@ int main(int argc, char **argv)
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
+
 		switch (c) {
+		case 0:
+			if (!strcmp(long_opts[opt_index].name, "no-csv-header"))
+				opts.no_csv_header = 1;
+			break;
 		case 'h':
 			usage(argv[0]);
 			return 1;
