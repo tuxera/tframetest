@@ -104,11 +104,17 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	test_result_t res = {0};
 	size_t i;
 
+	res.completion = calloc(frames, sizeof(*res.completion));
+	if (!res.completion)
+		return res;
+
 	for (i = start_frame; i < start_frame + frames; i++) {
+		uint64_t frame_start = tester_start();
 
 		if (!tester_frame_write(&res, path, frame, i)) {
 			break;
 		}
+		res.completion[i - start_frame] = tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
 	}
@@ -121,11 +127,17 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 	test_result_t res = {0};
 	size_t i;
 
+	res.completion = calloc(frames, sizeof(*res.completion));
+	if (!res.completion)
+		return res;
+
 	for (i = start_frame; i < start_frame + frames; i++) {
+		uint64_t frame_start = tester_start();
 
 		if (!tester_frame_read(&res, path, frame, i)) {
 			break;
 		}
+		res.completion[i - start_frame] = tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
 	}

@@ -43,6 +43,39 @@ typedef struct thread_info_t {
 	size_t frames;
 } thread_info_t;
 
+void print_frames_stat(const test_result_t *res, int csv)
+{
+	uint64_t min = SIZE_MAX;
+	uint64_t max = 0;
+	uint64_t total = 0;
+	size_t i;
+
+	if (!res->completion) {
+		if (csv)
+			printf(",,,");
+		return;
+	}
+
+	for (i = 0; i < res->frames_written; i++) {
+		if (res->completion[i] < min)
+			min = res->completion[i];
+		if (res->completion[i] > max)
+			max = res->completion[i];
+		total += res->completion[i];
+	}
+	if (csv) {
+		printf("%lu,", min);
+		printf("%lf,", (double)total / res->frames_written);
+		printf("%lu,", max);
+	} else {
+		printf("Completion times:\n");
+		printf(" min   : %lf ms\n", (double)min / SEC_IN_MS);
+		printf(" avg   : %lf ms\n", (double)total / res->frames_written
+				/ SEC_IN_MS);
+		printf(" max   : %lf ms\n", (double)max / SEC_IN_MS);
+	}
+}
+
 void print_results(const char *tcase, const test_result_t *res)
 {
 	if (!res)
@@ -61,11 +94,13 @@ void print_results(const char *tcase, const test_result_t *res)
 	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
+	print_frames_stat(res, 0);
 }
 
 void print_header_csv(void)
 {
-	printf(";case,profile,threads,frames,bytes,time,fps,bps,mibps\n");
+	printf(";case,profile,threads,frames,bytes,time,fps,bps,mibps,"
+			"fmin,favg,fmax\n");
 }
 
 void print_results_csv(const char *tcase, const opts_t *opts,
@@ -89,6 +124,7 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
+	print_frames_stat(res, 1);
 	printf("\n");
 }
 
@@ -173,6 +209,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 				pthread_cancel(threads[j].thread);
 			for (j = 0; j < i; j++)
 				pthread_join(threads[j].thread, &ret);
+			free(threads);
 			return 1;
 		}
 	}
@@ -191,6 +228,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 #endif
 		if (test_result_aggregate(&tres, &threads[i].res))
 		    res = 1;
+		result_free(&threads[i].res);
 	}
 	tres.time_taken_ns = tester_stop(start);
 	if (!res) {
@@ -199,6 +237,8 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 		else
 			print_results(tst, &tres);
 	}
+	result_free(&tres);
+	free(threads);
 	return res;
 }
 
@@ -232,8 +272,10 @@ int run_tests(opts_t *opts)
 		if (!opts->frm) {
 			opts->frm = tester_get_frame_read(opts->path);
 		}
-		if (!opts->frm)
+		if (!opts->frm) {
+			fprintf(stderr, "Can't allocate frame\n");
 			return 1;
+		}
 		opts->profile = opts->frm->profile;
 	}
 	if (!opts->csv)
@@ -243,12 +285,10 @@ int run_tests(opts_t *opts)
 		print_header_csv();
 
 	if (opts->mode & TEST_WRITE) {
-		opts->frm = frame_gen(opts->profile);
 		if (!opts->frm) {
 			fprintf(stderr, "Can't allocate frame\n");
 			return 1;
 		}
-
 		run_test_threads("write", opts, &run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {
