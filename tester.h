@@ -32,9 +32,9 @@ typedef struct test_result_t {
 uint64_t tester_start(void);
 uint64_t tester_stop(uint64_t);
 test_result_t tester_run_write(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames);
+		size_t start_frame, size_t frames, size_t fps);
 test_result_t tester_run_read(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames);
+		size_t start_frame, size_t frames, size_t fps);
 frame_t *tester_get_frame_read(const char *path);
 
 static inline void result_free(test_result_t *res)

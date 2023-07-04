@@ -38,10 +38,13 @@ typedef struct opts_t {
 typedef struct thread_info_t {
 	size_t id;
 	pthread_t thread;
+
 	const opts_t *opts;
 	test_result_t res;
+
 	size_t start_frame;
 	size_t frames;
+	size_t fps;
 } thread_info_t;
 
 void print_frames_stat(const test_result_t *res, int csv)
@@ -139,7 +142,7 @@ void *run_write_test_thread(void *arg)
 		return NULL;
 
 	info->res = tester_run_write(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames);
+			info->start_frame, info->frames, info->fps);
 
 	return NULL;
 }
@@ -154,7 +157,7 @@ void *run_read_test_thread(void *arg)
 		return NULL;
 
 	info->res = tester_run_read(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames);
+			info->start_frame, info->frames, info->fps);
 
 	return NULL;
 }
@@ -165,16 +168,28 @@ void calculate_frame_range(thread_info_t *threads, const opts_t *opts)
 	uint64_t start_frame;
 	uint64_t frames_per_thread;
 	uint64_t frames_left;
+	uint64_t fps_per_thread;
+	uint64_t fps_left;
 
 	frames_per_thread = opts->frames / opts->threads;
 	frames_left = opts->frames % opts->threads;
+
+	fps_per_thread = opts->fps / opts->threads;
+	fps_left = opts->fps % opts->threads;
+
 	start_frame = 0;
+
 	for (i = 0; i < opts->threads; i++) {
 		threads[i].start_frame = start_frame;
 		threads[i].frames = frames_per_thread;
+		threads[i].fps = fps_per_thread;
 		if (frames_left) {
 			++threads[i].frames;
 			--frames_left;
+		}
+		if (fps_left) {
+			++threads[i].fps;
+			--fps_left;
 		}
 		start_frame += threads[i].frames;
 	}

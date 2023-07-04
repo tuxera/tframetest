@@ -99,10 +99,13 @@ frame_t *tester_get_frame_read(const char *path)
 }
 
 test_result_t tester_run_write(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames)
+		size_t start_frame, size_t frames, size_t fps)
 {
 	test_result_t res = {0};
 	size_t i;
+	size_t budget;
+
+	budget = fps ? (SEC_IN_NS / fps) : 0;
 
 	res.completion = calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
@@ -117,15 +120,27 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 		res.completion[i - start_frame] = tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
+		/* If fps limit is enabled loop until frame budget is gone */
+		if (fps && budget) {
+			uint64_t frame_elapsed = tester_stop(frame_start);
+
+			while (frame_elapsed < budget) {
+				usleep(100);
+				frame_elapsed = tester_stop(frame_start);
+			}
+		}
 	}
 	return res;
 }
 
 test_result_t tester_run_read(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames)
+		size_t start_frame, size_t frames, size_t fps)
 {
 	test_result_t res = {0};
 	size_t i;
+	size_t budget;
+
+	budget = fps ? (SEC_IN_NS / fps) : 0;
 
 	res.completion = calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
@@ -140,6 +155,15 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 		res.completion[i - start_frame] = tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
+		/* If fps limit is enabled loop until frame budget is gone */
+		if (fps && budget) {
+			uint64_t frame_elapsed = tester_stop(frame_start);
+
+			while (frame_elapsed < budget) {
+				usleep(100);
+				frame_elapsed = tester_stop(frame_start);
+			}
+		}
 	}
 	return res;
 }
