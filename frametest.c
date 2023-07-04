@@ -445,7 +445,6 @@ static struct option long_opts[] = {
 	{ "write", required_argument, 0, 'w' },
 	{ "read", no_argument, 0, 'r' },
 	{ "empty", no_argument, 0, 'e' },
-	{ "profile", required_argument, 0, 'p' },
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
@@ -460,10 +459,9 @@ static struct option long_opts[] = {
 };
 static size_t long_opts_cnt = sizeof(long_opts) / sizeof(long_opts[0]);
 static struct long_opt_desc long_opt_descs[] = {
-	{ "write", "Perform write tests"},
+	{ "write", "Perform write tests, size/profile as parameter"},
 	{ "read", "Perform read tests"},
 	{ "empty", "Perform write tests with empty frames"},
-	{ "profile", "Select frame profile to use"},
 	{ "list-profiles", "List available profiles"},
 	{ "threads", "Use number of threads (default 1)"},
 	{ "num-frames", "Write number of frames (default 1800)" },
@@ -518,7 +516,7 @@ int main(int argc, char **argv)
 	opts.header_size = 65536;
 	while (1) {
 
-		c = getopt_long(argc, argv, "rw:ep:lt:n:f:vmhc",
+		c = getopt_long(argc, argv, "rw:elt:n:f:vmhc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -558,10 +556,6 @@ int main(int argc, char **argv)
 			break;
 		case 'r':
 			opts.mode |= TEST_READ;
-			break;
-		case 'p':
-			if (opt_parse_profile(&opts, optarg))
-				goto invalid_short;
 			break;
 		case 't':
 			if (opt_parse_threads(&opts, optarg))
