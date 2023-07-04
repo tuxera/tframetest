@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "profile.h"
 #include "frame.h"
@@ -34,6 +35,7 @@ typedef struct opts_t {
 	size_t header_size;
 
 	unsigned int reverse : 1;
+	unsigned int random : 1;
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
 } opts_t;
@@ -147,6 +149,8 @@ void *run_write_test_thread(void *arg)
 
 	if (info->opts->reverse)
 		mode = TEST_REVERSE;
+	else if (info->opts->random)
+		mode = TEST_RANDOM;
 	info->res = tester_run_write(info->opts->path, info->opts->frm,
 			info->start_frame, info->frames, info->fps, mode);
 
@@ -165,6 +169,8 @@ void *run_read_test_thread(void *arg)
 
 	if (info->opts->reverse)
 		mode = TEST_REVERSE;
+	else if (info->opts->random)
+		mode = TEST_RANDOM;
 	info->res = tester_run_read(info->opts->path, info->opts->frm,
 			info->start_frame, info->frames, info->fps, mode);
 
@@ -445,6 +451,7 @@ static struct option long_opts[] = {
 	{ "num-frames", required_argument, 0, 'n' },
 	{ "fps", required_argument, 0, 'f' },
 	{ "reverse", no_argument, 0, 'v' },
+	{ "random", no_argument, 0, 'm' },
 	{ "csv", no_argument, 0, 'c' },
 	{ "no-csv-header", no_argument, 0, 0 },
 	{ "header", required_argument, 0, 0 },
@@ -462,6 +469,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "num-frames", "Write number of frames (default 1800)" },
 	{ "fps", "Limit frame rate to frames per second" },
 	{ "reverse", "Access files in reverse order" },
+	{ "random", "Access files in random order" },
 	{ "csv", "Output results in CSV format" },
 	{ "no-csv-header", "Do not print CSV header" },
 	{ "header", "Frame header size (default 64k)" },
@@ -504,12 +512,13 @@ int main(int argc, char **argv)
 	int c = 0;
 	int opt_index = 0;
 
+	srand(time(NULL));
 	opts.threads = 1;
 	opts.frames = 1800;
 	opts.header_size = 65536;
 	while (1) {
 
-		c = getopt_long(argc, argv, "rw:ep:lt:n:f:vhc",
+		c = getopt_long(argc, argv, "rw:ep:lt:n:f:vmhc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -531,6 +540,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			opts.reverse = 1;
+			break;
+		case 'm':
+			opts.random = 1;
 			break;
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
@@ -582,6 +594,12 @@ int main(int argc, char **argv)
 				return 1;
 			}
 		}
+	}
+	if (opts.random && opts.reverse) {
+		printf("ERROR: --random and --reverse are mutually exclusive, "
+		       "please define only one.\n");
+		usage(argv[0]);
+		return 1;
 	}
 	if (!opts.path) {
 		usage(argv[0]);

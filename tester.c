@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -104,6 +105,23 @@ frame_t *tester_get_frame_read(const char *path)
 	return frame_from_file(name);
 }
 
+static inline void shuffle_array(size_t *arr, size_t size)
+{
+	size_t i;
+
+	if (!arr || size <= 1)
+		return;
+
+	for (i = size - 1; i >= 1; i--) {
+		size_t j = rand() % size;
+		size_t tmp;
+
+		tmp = arr[j];
+		arr[j] = arr[i];
+		arr[i] = tmp;
+	}
+}
+
 test_result_t tester_run_write(const char *path, frame_t *frame,
 		size_t start_frame, size_t frames, size_t fps,
 		test_mode_t mode)
@@ -112,6 +130,7 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	size_t i;
 	size_t budget;
 	size_t end_frame;
+	size_t *seq = NULL;
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
@@ -122,6 +141,16 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 	end_frame = start_frame + frames;
 
+	if (mode == TEST_RANDOM) {
+		seq = malloc(sizeof(*seq) * frames);
+		if (!seq)
+			return res;
+
+		for (i = 0; i < frames; i++)
+			seq[i] = start_frame + i;
+		shuffle_array(seq, frames);
+	}
+
 	for (i = start_frame; i < end_frame; i++) {
 		uint64_t frame_start = tester_start();
 
@@ -129,6 +158,11 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 		case TEST_REVERSE:
 			if (!tester_frame_write(&res, path, frame,
 					end_frame - i + start_frame - 1))
+				return res;
+			break;
+		case TEST_RANDOM:
+			if (!tester_frame_write(&res, path, frame,
+					seq[i - start_frame]))
 				return res;
 			break;
 		case TEST_NORM:
@@ -149,6 +183,8 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 			}
 		}
 	}
+	if (seq)
+		free(seq);
 	return res;
 }
 
@@ -160,6 +196,7 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 	size_t i;
 	size_t budget;
 	size_t end_frame;
+	size_t *seq = NULL;
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
@@ -170,6 +207,16 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 	end_frame = start_frame + frames;
 
+	if (mode == TEST_RANDOM) {
+		seq = malloc(sizeof(*seq) * frames);
+		if (!seq)
+			return res;
+
+		for (i = 0; i < frames; i++)
+			seq[i] = i + start_frame;
+		shuffle_array(seq, frames);
+	}
+
 	for (i = start_frame; i < start_frame + frames; i++) {
 		uint64_t frame_start = tester_start();
 
@@ -177,6 +224,11 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 		case TEST_REVERSE:
 			if (!tester_frame_read(&res, path, frame,
 					end_frame - i + start_frame - 1))
+				return res;
+			break;
+		case TEST_RANDOM:
+			if (!tester_frame_read(&res, path, frame,
+					seq[i - start_frame]))
 				return res;
 			break;
 		case TEST_NORM:
@@ -197,5 +249,7 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 			}
 		}
 	}
+	if (seq)
+		free(seq);
 	return res;
 }
