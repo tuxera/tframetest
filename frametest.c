@@ -30,6 +30,7 @@ typedef struct opts_t {
 	size_t threads;
 	size_t frames;
 	size_t fps;
+	size_t header_size;
 
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
@@ -282,6 +283,7 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
+	opts->profile.header_size = opts->header_size;
 	if (opts->mode & TEST_WRITE)
 		opts->frm = frame_gen(opts->profile);
 	else if (opts->mode & TEST_READ) {
@@ -362,7 +364,7 @@ int opt_parse_profile(opts_t *opt, const char *arg)
 	return 0;
 }
 
-static inline int parse_arg_size_t(const char *arg, size_t *res)
+static inline int parse_arg_size_t(const char *arg, size_t *res, int zero_ok)
 {
 	char *endp = NULL;
 	size_t val;
@@ -371,8 +373,11 @@ static inline int parse_arg_size_t(const char *arg, size_t *res)
 		return 1;
 
 	val = strtoll(arg, &endp, 10);
-	if (!endp || *endp != 0 || !val)
+	if (!endp || *endp != 0)
 		return 1;
+	if (!zero_ok && !val)
+		return 1;
+
 	*res = val;
 
 	return 0;
@@ -380,17 +385,22 @@ static inline int parse_arg_size_t(const char *arg, size_t *res)
 
 int opt_parse_threads(opts_t *opt, const char *arg)
 {
-	return parse_arg_size_t(arg, &opt->threads);
+	return parse_arg_size_t(arg, &opt->threads, 0);
 }
 
 int opt_parse_num_frames(opts_t *opt, const char *arg)
 {
-	return parse_arg_size_t(arg, &opt->frames);
+	return parse_arg_size_t(arg, &opt->frames, 0);
 }
 
 int opt_parse_limit_fps(opts_t *opt, const char *arg)
 {
-	return parse_arg_size_t(arg, &opt->fps);
+	return parse_arg_size_t(arg, &opt->fps, 0);
+}
+
+int opt_parse_header_size(opts_t *opt, const char *arg)
+{
+	return parse_arg_size_t(arg, &opt->header_size, 1);
 }
 
 void list_profiles(void)
@@ -424,6 +434,7 @@ static struct option long_opts[] = {
 	{ "fps", required_argument, 0, 'f' },
 	{ "csv", no_argument, 0, 'c' },
 	{ "no-csv-header", no_argument, 0, 0 },
+	{ "header", required_argument, 0, 0 },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -438,6 +449,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "fps", "Limit frame rate to frames per second" },
 	{ "csv", "Output results in CSV format" },
 	{ "no-csv-header", "Do not print CSV header" },
+	{ "header", "Frame header size (default 64k)" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
@@ -474,12 +486,13 @@ void usage(const char *name)
 int main(int argc, char **argv)
 {
 	opts_t opts = {0};
+	int c = 0;
+	int opt_index = 0;
 
 	opts.threads = 1;
 	opts.frames = 1800;
+	opts.header_size = 65536;
 	while (1) {
-		int opt_index = 0;
-		int c;
 
 		c = getopt_long(argc, argv, "rw:p:lt:n:f:hc",
 				long_opts, &opt_index);
@@ -490,6 +503,10 @@ int main(int argc, char **argv)
 		case 0:
 			if (!strcmp(long_opts[opt_index].name, "no-csv-header"))
 				opts.no_csv_header = 1;
+			if (!strcmp(long_opts[opt_index].name, "header")) {
+				if (opt_parse_header_size(&opts, optarg))
+					goto invalid_long;
+			}
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -509,32 +526,20 @@ int main(int argc, char **argv)
 			opts.mode |= TEST_READ;
 			break;
 		case 'p':
-			if (opt_parse_profile(&opts, optarg)) {
-				fprintf(stderr, "Invalid argument for option "
-						"%c: %s\n", c, optarg);
-				return 1;
-			}
+			if (opt_parse_profile(&opts, optarg))
+				goto invalid_short;
 			break;
 		case 't':
-			if (opt_parse_threads(&opts, optarg)) {
-				fprintf(stderr, "Invalid argument for option "
-						"%c: %s\n", c, optarg);
-				return 1;
-			}
+			if (opt_parse_threads(&opts, optarg))
+				goto invalid_short;
 			break;
 		case 'n':
-			if (opt_parse_num_frames(&opts, optarg)) {
-				fprintf(stderr, "Invalid argument for option "
-						"%c: %s\n", c, optarg);
-				return 1;
-			}
+			if (opt_parse_num_frames(&opts, optarg))
+				goto invalid_short;
 			break;
 		case 'f':
-			if (opt_parse_limit_fps(&opts, optarg)) {
-				fprintf(stderr, "Invalid argument for option "
-						"%c: %s\n", c, optarg);
-				return 1;
-			}
+			if (opt_parse_limit_fps(&opts, optarg))
+				goto invalid_short;
 			break;
 		case 'l':
 			list_profiles();
@@ -562,4 +567,13 @@ int main(int argc, char **argv)
 	}
 
 	return run_tests(&opts);
+
+invalid_long:
+	fprintf(stderr, "Invalid argument for option --%s: %s\n",
+			long_opts[opt_index].name, optarg);
+	return 1;
+
+invalid_short:
+	fprintf(stderr, "Invalid argument for option " "-%c: %s\n", c, optarg);
+	return 1;
 }

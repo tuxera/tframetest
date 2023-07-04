@@ -7,18 +7,17 @@
  */
 static profile_t profiles[] = {
 	{ "invalid", PROF_INVALID, 0, 0, 0, 0 },
-	{ "SD-32bit-cmp", PROF_SD, 720, 480, 4, 65536 },
+	{ "SD-32bit-cmp", PROF_SD, 720, 480, 4, 0 },
 	{ "SD-24bit", PROF_SD, 720, 480, 3, 0 },
-	{ "FULLHD-32bit-cmp", PROF_HD, 1920, 1080, 4, 65536 },
+	{ "FULLHD-32bit-cmp", PROF_HD, 1920, 1080, 4, 0 },
 	{ "HD-24bit", PROF_HD, 1280, 720, 3, 0 },
 	{ "FULLHD-24bit", PROF_FULLHD, 1920, 1080, 3, 0 },
-	{ "2K-32bit-cmp", PROF_2K, 2048, 1556, 4, 65536},
+	{ "2K-32bit-cmp", PROF_2K, 2048, 1556, 4, 0 },
 	{ "2K-24bit", PROF_2K, 2048, 1080, 3, 0 },
-	{ "4K-32bit-cmp", PROF_4K, 4096, 3112, 4, 65536 },
+	{ "4K-32bit-cmp", PROF_4K, 4096, 3112, 4, 0 },
 	{ "4K-24bit", PROF_4K, 3840, 2160, 3, 0 },
 	{ "4K-16bit", PROF_4K, 3840, 2160, 2, 0 },
 	{ "4K-32bit", PROF_4K, 3840, 2160, 4, 0 },
-	{ "4K-24bit-hdr", PROF_4K, 3840, 2160, 4, 65536 },
 	{ "8K-24bit", PROF_8K, 7680, 4320, 3, 0 },
 };
 static size_t profile_cnt = sizeof(profiles) / sizeof(profiles[0]);
