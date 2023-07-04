@@ -99,11 +99,13 @@ frame_t *tester_get_frame_read(const char *path)
 }
 
 test_result_t tester_run_write(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps)
+		size_t start_frame, size_t frames, size_t fps,
+		test_mode_t mode)
 {
 	test_result_t res = {0};
 	size_t i;
 	size_t budget;
+	size_t end_frame;
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
@@ -111,10 +113,21 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	if (!res.completion)
 		return res;
 
-	for (i = start_frame; i < start_frame + frames; i++) {
+	budget = fps ? (SEC_IN_NS / fps) : 0;
+	end_frame = start_frame + frames;
+
+	for (i = start_frame; i < end_frame; i++) {
 		uint64_t frame_start = tester_start();
 
-		if (!tester_frame_write(&res, path, frame, i)) {
+		switch (mode) {
+		case TEST_REVERSE:
+			if (!tester_frame_write(&res, path, frame,
+					end_frame - i + start_frame - 1))
+				return res;
+			break;
+		case TEST_NORM:
+			if (!tester_frame_write(&res, path, frame, i))
+				return res;
 			break;
 		}
 		res.completion[i - start_frame] = tester_stop(frame_start);
@@ -134,11 +147,13 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 }
 
 test_result_t tester_run_read(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps)
+		size_t start_frame, size_t frames, size_t fps,
+		test_mode_t mode)
 {
 	test_result_t res = {0};
 	size_t i;
 	size_t budget;
+	size_t end_frame;
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
@@ -146,10 +161,21 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 	if (!res.completion)
 		return res;
 
+	budget = fps ? (SEC_IN_NS / fps) : 0;
+	end_frame = start_frame + frames;
+
 	for (i = start_frame; i < start_frame + frames; i++) {
 		uint64_t frame_start = tester_start();
 
-		if (!tester_frame_read(&res, path, frame, i)) {
+		switch (mode) {
+		case TEST_REVERSE:
+			if (!tester_frame_read(&res, path, frame,
+					end_frame - i + start_frame - 1))
+				return res;
+			break;
+		case TEST_NORM:
+			if (!tester_frame_read(&res, path, frame, i))
+				return res;
 			break;
 		}
 		res.completion[i - start_frame] = tester_stop(frame_start);

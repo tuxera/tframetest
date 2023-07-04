@@ -32,6 +32,7 @@ typedef struct opts_t {
 	size_t fps;
 	size_t header_size;
 
+	unsigned int reverse : 1;
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
 } opts_t;
@@ -136,14 +137,17 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 void *run_write_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
+	test_mode_t mode = TEST_NORM;
 
 	if (!arg)
 		return NULL;
 	if (!info->opts)
 		return NULL;
 
+	if (info->opts->reverse)
+		mode = TEST_REVERSE;
 	info->res = tester_run_write(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames, info->fps);
+			info->start_frame, info->frames, info->fps, mode);
 
 	return NULL;
 }
@@ -151,14 +155,17 @@ void *run_write_test_thread(void *arg)
 void *run_read_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
+	test_mode_t mode = TEST_NORM;
 
 	if (!arg)
 		return NULL;
 	if (!info->opts)
 		return NULL;
 
+	if (info->opts->reverse)
+		mode = TEST_REVERSE;
 	info->res = tester_run_read(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames, info->fps);
+			info->start_frame, info->frames, info->fps, mode);
 
 	return NULL;
 }
@@ -432,6 +439,7 @@ static struct option long_opts[] = {
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
 	{ "fps", required_argument, 0, 'f' },
+	{ "reverse", no_argument, 0, 'v' },
 	{ "csv", no_argument, 0, 'c' },
 	{ "no-csv-header", no_argument, 0, 0 },
 	{ "header", required_argument, 0, 0 },
@@ -447,6 +455,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "threads", "Use number of threads (default 1)"},
 	{ "num-frames", "Write number of frames (default 1800)" },
 	{ "fps", "Limit frame rate to frames per second" },
+	{ "reverse", "Access files in reverse order" },
 	{ "csv", "Output results in CSV format" },
 	{ "no-csv-header", "Do not print CSV header" },
 	{ "header", "Frame header size (default 64k)" },
@@ -494,7 +503,7 @@ int main(int argc, char **argv)
 	opts.header_size = 65536;
 	while (1) {
 
-		c = getopt_long(argc, argv, "rw:p:lt:n:f:hc",
+		c = getopt_long(argc, argv, "rw:p:lt:n:f:vhc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -513,6 +522,9 @@ int main(int argc, char **argv)
 			return 1;
 		case 'c':
 			opts.csv = 1;
+			break;
+		case 'v':
+			opts.reverse = 1;
 			break;
 		case 'w':
 			if (opt_parse_write(&opts, optarg)) {
