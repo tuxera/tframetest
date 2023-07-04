@@ -29,6 +29,7 @@ typedef struct opts_t {
 
 	size_t threads;
 	size_t frames;
+	size_t fps;
 
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
@@ -346,36 +347,35 @@ int opt_parse_profile(opts_t *opt, const char *arg)
 	return 0;
 }
 
-int opt_parse_threads(opts_t *opt, const char *arg)
+static inline int parse_arg_size_t(const char *arg, size_t *res)
 {
 	char *endp = NULL;
-	size_t th;
+	size_t val;
 
-	if (!arg)
+	if (!arg || !res)
 		return 1;
 
-	th = strtoll(arg, &endp, 10);
-	if (!endp || *endp != 0 || !th)
+	val = strtoll(arg, &endp, 10);
+	if (!endp || *endp != 0 || !val)
 		return 1;
-	opt->threads = th;
+	*res = val;
 
 	return 0;
 }
 
+int opt_parse_threads(opts_t *opt, const char *arg)
+{
+	return parse_arg_size_t(arg, &opt->threads);
+}
+
 int opt_parse_num_frames(opts_t *opt, const char *arg)
 {
-	char *endp = NULL;
-	size_t th;
+	return parse_arg_size_t(arg, &opt->frames);
+}
 
-	if (!arg)
-		return 1;
-
-	th = strtoll(arg, &endp, 10);
-	if (!endp || *endp != 0 || !th)
-		return 1;
-	opt->frames = th;
-
-	return 0;
+int opt_parse_limit_fps(opts_t *opt, const char *arg)
+{
+	return parse_arg_size_t(arg, &opt->fps);
 }
 
 void list_profiles(void)
@@ -406,6 +406,7 @@ static struct option long_opts[] = {
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
+	{ "fps", required_argument, 0, 'f' },
 	{ "csv", no_argument, 0, 'c' },
 	{ "no-csv-header", no_argument, 0, 0 },
 	{ "help", no_argument, 0, 'h' },
@@ -419,6 +420,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "list-profiles", "List available profiles"},
 	{ "threads", "Use number of threads (default 1)"},
 	{ "num-frames", "Write number of frames (default 1800)" },
+	{ "fps", "Limit frame rate to frames per second" },
 	{ "csv", "Output results in CSV format" },
 	{ "no-csv-header", "Do not print CSV header" },
 	{ "help", "Display this help" },
@@ -464,7 +466,7 @@ int main(int argc, char **argv)
 		int opt_index = 0;
 		int c;
 
-		c = getopt_long(argc, argv, "rw:p:lt:n:hc",
+		c = getopt_long(argc, argv, "rw:p:lt:n:f:hc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -507,6 +509,13 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			if (opt_parse_num_frames(&opts, optarg)) {
+				fprintf(stderr, "Invalid argument for option "
+						"%c: %s\n", c, optarg);
+				return 1;
+			}
+			break;
+		case 'f':
+			if (opt_parse_limit_fps(&opts, optarg)) {
 				fprintf(stderr, "Invalid argument for option "
 						"%c: %s\n", c, optarg);
 				return 1;
