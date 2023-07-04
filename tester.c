@@ -61,6 +61,9 @@ size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
 
 	close(f);
 
+	/* Faking the output! */
+	if (!ret && !frame->size)
+		return 1;
 	return ret;
 }
 
@@ -85,6 +88,9 @@ size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
 
 	close(f);
 
+	/* Faking the output! */
+	if (!ret && !frame->size)
+		return 1;
 	return ret;
 }
 

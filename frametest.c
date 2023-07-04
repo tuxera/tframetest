@@ -15,6 +15,7 @@
 enum TestMode {
 	TEST_WRITE = 1 << 0,
 	TEST_READ  = 1 << 1,
+	TEST_EMPTY = 1 << 2,
 };
 
 typedef struct opts_t {
@@ -276,7 +277,9 @@ int run_tests(opts_t *opts)
 			opts->prof != PROF_INVALID) {
 		opts->profile = profile_get_by_type(opts->prof);
 	}
-	if (opts->profile.prof == PROF_INVALID && opts->write_size) {
+	if (opts->mode & TEST_EMPTY)
+		opts->profile = profile_get_by_name("empty");
+	else if (opts->profile.prof == PROF_INVALID && opts->write_size) {
 		opts->profile.prof = PROF_CUSTOM;
 		opts->profile.name = "custom";
 
@@ -290,7 +293,8 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
-	opts->profile.header_size = opts->header_size;
+	opts->profile.header_size = (opts->mode & TEST_EMPTY)
+			? 0 : opts->header_size;
 	if (opts->mode & TEST_WRITE)
 		opts->frm = frame_gen(opts->profile);
 	else if (opts->mode & TEST_READ) {
@@ -434,6 +438,7 @@ struct long_opt_desc {
 static struct option long_opts[] = {
 	{ "write", required_argument, 0, 'w' },
 	{ "read", no_argument, 0, 'r' },
+	{ "empty", no_argument, 0, 'e' },
 	{ "profile", required_argument, 0, 'p' },
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
@@ -450,6 +455,7 @@ static size_t long_opts_cnt = sizeof(long_opts) / sizeof(long_opts[0]);
 static struct long_opt_desc long_opt_descs[] = {
 	{ "write", "Perform write tests"},
 	{ "read", "Perform read tests"},
+	{ "empty", "Perform write tests with empty frames"},
 	{ "profile", "Select frame profile to use"},
 	{ "list-profiles", "List available profiles"},
 	{ "threads", "Use number of threads (default 1)"},
@@ -503,7 +509,7 @@ int main(int argc, char **argv)
 	opts.header_size = 65536;
 	while (1) {
 
-		c = getopt_long(argc, argv, "rw:p:lt:n:f:vhc",
+		c = getopt_long(argc, argv, "rw:ep:lt:n:f:vhc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -533,6 +539,10 @@ int main(int argc, char **argv)
 				}
 			}
 			opts.mode |= TEST_WRITE;
+			break;
+		case 'e':
+			opts.mode |= TEST_WRITE;
+			opts.mode |= TEST_EMPTY;
 			break;
 		case 'r':
 			opts.mode |= TEST_READ;

@@ -56,29 +56,29 @@ frame_t *frame_from_file(const char *fname)
 		return NULL;
 
 	res->size = st.st_size;
-	if (!res->size) {
-		free(res);
-		return NULL;
-	}
 	/* Round to direct I/O boundaries */
 	if (res->size & 0xfff) {
 		size_t extra = res->size & 0xfff;
 		res->size += ALIGN_SIZE - extra;
 	}
-	res->profile.prof = PROF_CUSTOM;
-	res->profile.name = "custom";
-	res->profile.width = res->size;
-	res->profile.bytes_per_pixel = 1;
-	res->profile.height = 1;
-	res->profile.header_size = 0;
+	if (!res->size)
+		res->profile = profile_get_by_name("empty");
+	else {
+		res->profile.prof = PROF_CUSTOM;
+		res->profile.name = "custom";
+		res->profile.width = res->size;
+		res->profile.bytes_per_pixel = 1;
+		res->profile.height = 1;
+		res->profile.header_size = 0;
 
-	if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
-		free(res);
-		return NULL;
-	}
-	if (!res->data) {
-		free(res);
-		return NULL;
+		if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
+			free(res);
+			return NULL;
+		}
+		if (!res->data) {
+			free(res);
+			return NULL;
+		}
 	}
 
 	return res;
@@ -105,6 +105,8 @@ size_t frame_fill(frame_t *frame, char val)
 size_t frame_write(int f, frame_t *frame)
 {
 	if (!f || !frame)
+		return 0;
+	if (!frame->size)
 		return 0;
 
 #if 1

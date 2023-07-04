@@ -19,6 +19,7 @@ static profile_t profiles[] = {
 	{ "4K-16bit", PROF_4K, 3840, 2160, 2, 0 },
 	{ "4K-32bit", PROF_4K, 3840, 2160, 4, 0 },
 	{ "8K-24bit", PROF_8K, 7680, 4320, 3, 0 },
+	{ "empty", PROF_CUSTOM, 0, 0, 0, 0 },
 };
 static size_t profile_cnt = sizeof(profiles) / sizeof(profiles[0]);
 
