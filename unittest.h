@@ -14,5 +14,8 @@
 #define TEST_ASSERT_NE(X, Y) if ((X) == (Y)) {\
 	printf(" ASSERT: %s != %s @%s:%u\n", #X, #Y, \
 		__FILE__, __LINE__); return 1; }
+#define TEST_ASSERT_EQ_STR(X, Y) if (strcmp(X, Y)) {\
+	printf(" ASSERT: %s == %s @%s:%u\n", #X, #Y, \
+		__FILE__, __LINE__); return 1; }
 
 #endif

@@ -2,7 +2,7 @@
 
 #define RUN_TEST(NAME)\
 	extern int test_ ## NAME (void);\
-	printf("Running %s...\n", #NAME);\
+	printf("Testing %s...\n", #NAME);\
 	if (test_ ## NAME ()) { return 1;}
 
 int main(int argc, char **argv)
@@ -11,6 +11,7 @@ int main(int argc, char **argv)
 	(void)argv;
 
 	RUN_TEST(frame);
+	RUN_TEST(profile);
 
 	printf("Done.\n");
 	return 0;
