@@ -5,10 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "frametest.h"
 #include "frame.h"
-
-#define SEC_IN_NS 1000000000UL
-#define SEC_IN_MS (SEC_IN_NS / 1000UL)
 
 typedef struct testset_t {
 	const char *path;
@@ -20,22 +18,6 @@ typedef struct testset_t {
 	uint64_t frames_written;
 	uint64_t time_taken_ns;
 } testset_t;
-
-typedef struct test_completion_t {
-	uint64_t start;
-	uint64_t open;
-	uint64_t io;
-	uint64_t close;
-	uint64_t frame;
-} test_completion_t;
-
-typedef struct test_result_t {
-	uint64_t frames_written;
-	uint64_t bytes_written;
-	uint64_t write_time_taken_ns;
-	uint64_t time_taken_ns;
-	test_completion_t *completion;
-} test_result_t;
 
 typedef enum test_mode_t {
 	TEST_NORM = 0,
