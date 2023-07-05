@@ -22,6 +22,7 @@ typedef struct testset_t {
 } testset_t;
 
 typedef struct test_completion_t {
+	uint64_t start;
 	uint64_t open;
 	uint64_t io;
 	uint64_t close;

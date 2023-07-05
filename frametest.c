@@ -46,6 +46,7 @@ typedef struct opts_t {
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
 	unsigned int times : 1;
+	unsigned int frametimes : 1;
 	unsigned int histogram : 1;
 } opts_t;
 
@@ -149,8 +150,10 @@ void print_histogram(const test_result_t *res)
 	 * into proper one.
 	 */
 	for (i = 0; i < res->frames_written; i++) {
-		size_t b = time_get_bucket(res->completion[i].frame);
-		size_t sb = time_get_sub_bucket(b, res->completion[i].frame);
+		size_t frametime = res->completion[i].frame -
+				res->completion[i].start;
+		size_t b = time_get_bucket(frametime);
+		size_t sb = time_get_sub_bucket(b, frametime);
 
 		++cnts[b * SUB_BUCKET_CNT + sb];
 	}
@@ -216,16 +219,20 @@ void print_stat_about(const test_result_t *res, const char *label,
 		switch (stat) {
 		case COMP_OPEN:
 			val = res->completion[i].open;
+			val -= res->completion[i].start;
 			break;
 		case COMP_IO:
 			val = res->completion[i].io;
+			val -= res->completion[i].open;
 			break;
 		case COMP_CLOSE:
 			val = res->completion[i].close;
+			val -= res->completion[i].io;
 			break;
 		default:
 		case COMP_FRAME:
 			val = res->completion[i].frame;
+			val -= res->completion[i].start;
 			break;
 		}
 
@@ -248,7 +255,7 @@ void print_stat_about(const test_result_t *res, const char *label,
 	}
 }
 
-void print_frames_stat(const test_result_t *res,  const opts_t *opts)
+void print_frames_stat(const test_result_t *res, const opts_t *opts)
 {
 	if (!res->completion) {
 		if (opts->csv)
@@ -273,6 +280,25 @@ void print_frames_stat(const test_result_t *res,  const opts_t *opts)
 	}
 }
 
+void print_frame_times(const test_result_t *res, const opts_t *opts)
+{
+	if (!opts->frametimes)
+		return;
+	size_t i;
+
+	printf("frame,start,open,io,close,frame\n");
+	for (i = 0; i < res->frames_written; i++) {
+		printf("%lu,%lu,%lu,%lu,%lu,%lu\n",
+		       i,
+		       res->completion[i].start,
+		       res->completion[i].open,
+		       res->completion[i].io,
+		       res->completion[i].close,
+		       res->completion[i].frame
+		       );
+	}
+}
+
 void print_results(const char *tcase, const opts_t *opts,
 		const test_result_t *res)
 {
@@ -293,6 +319,7 @@ void print_results(const char *tcase, const opts_t *opts,
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
 	print_frames_stat(res, opts);
+	print_frame_times(res, opts);
 }
 
 void print_header_csv(const opts_t *opts)
@@ -329,6 +356,7 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 			/ res->time_taken_ns);
 	print_frames_stat(res, opts);
 	printf("\n");
+	print_frame_times(res, opts);
 }
 
 void *run_write_test_thread(void *arg)
@@ -652,6 +680,7 @@ static struct option long_opts[] = {
 	{ "no-csv-header", no_argument, 0, 0 },
 	{ "header", required_argument, 0, 0 },
 	{ "times", no_argument, 0, 0 },
+	{ "frametimes", no_argument, 0, 0 },
 	{ "histogram", no_argument, 0, 0 },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
@@ -671,6 +700,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "no-csv-header", "Do not print CSV header" },
 	{ "header", "Frame header size (default 64k)" },
 	{ "times", "Show breakdown of completion times (open/io/close)" },
+	{ "frametimes", "Show detailed timings of every frames in CSV format" },
 	{ "histogram", "Show histogram of completion times at the end" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
@@ -730,6 +760,8 @@ int main(int argc, char **argv)
 				opts.histogram = 1;
 			if (!strcmp(long_opts[opt_index].name, "times"))
 				opts.times = 1;
+			if (!strcmp(long_opts[opt_index].name, "frametimes"))
+				opts.frametimes = 1;
 			if (!strcmp(long_opts[opt_index].name, "header")) {
 				if (opt_parse_header_size(&opts, optarg))
 					goto invalid_long;
