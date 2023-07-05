@@ -4,13 +4,22 @@ HEADERS := $(wildcard *.h)
 
 all: tframetest
 
-tframetest: profile.o frame.o tester.o frametest.o histogram.o report.o
+tframetest: frametest.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+libtframetest.a: profile.o frame.o tester.o histogram.o report.o
+	$(AR) $(ARFLAGS) $@ $^
 
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+test: unittest
+	./unittest
+
+unittest: unittest.o test_frame.o libtframetest.a
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 clean:
-	rm -f *.o tframetest
+	rm -f *.o tframetest libtframetest.a
 
 .PHONY: all clean

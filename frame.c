@@ -109,27 +109,29 @@ size_t frame_write(int f, frame_t *frame)
 	if (!frame->size)
 		return 0;
 
-#if 1
 #if 0
 	posix_fallocate(f, 0, frame->size);
 #endif
 
 	/* Avoid buffered writes if possible */
 	return write(f, frame->data, frame->size);
-#else
-	return fwrite(frame->data, frame->size, 1, f);
-#endif
 }
 
 size_t frame_read(int f, frame_t *frame)
 {
+	size_t res = 0;
+
 	if (!f || !frame)
 		return 0;
 
-#if 1
-	/* Avoid buffered reads */
-	return read(f, frame->data, frame->size);
-#else
-	return fread(frame->data, frame->size, 1, f);
-#endif
+	res = 0;
+	while (res < frame->size) {
+		size_t readcnt;
+
+		readcnt = read(f, (char*)frame->data + res, frame->size - res);
+		if (readcnt == 0)
+			break;
+		res += readcnt;
+	}
+	return res;
 }
