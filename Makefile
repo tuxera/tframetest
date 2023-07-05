@@ -16,7 +16,7 @@ libtframetest.a: profile.o frame.o tester.o histogram.o report.o
 test: unittest
 	./unittest
 
-unittest: unittest.o test_frame.o test_profile.o libtframetest.a
+unittest: unittest.o test_frame.o test_profile.o test_tester.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:

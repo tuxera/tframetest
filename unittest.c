@@ -12,6 +12,7 @@ int main(int argc, char **argv)
 
 	RUN_TEST(frame);
 	RUN_TEST(profile);
+	RUN_TEST(tester);
 
 	printf("Done.\n");
 	return 0;
