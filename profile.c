@@ -3,7 +3,7 @@
 
 /*
  * All the "cmp" profiles tries to match similar profile in "frametest" which
- * uses 4:3 ratio for 2k and 4k with 32 bit colors and 64k header.
+ * uses 4:3 ratio for 2k and 4k with 32 bit colors.
  */
 static profile_t profiles[] = {
 	{ "invalid", PROF_INVALID, 0, 0, 0, 0 },

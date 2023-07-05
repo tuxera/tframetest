@@ -38,6 +38,7 @@ typedef struct opts_t {
 	unsigned int random : 1;
 	unsigned int csv : 1;
 	unsigned int no_csv_header : 1;
+	unsigned int histogram : 1;
 } opts_t;
 
 typedef struct thread_info_t {
@@ -51,6 +52,147 @@ typedef struct thread_info_t {
 	size_t frames;
 	size_t fps;
 } thread_info_t;
+
+/* Histogram buckets in ns */
+static uint64_t buckets[] = {
+                 0,
+	    200000,
+	    500000,
+	   1000000,
+	   2000000,
+	   5000000,
+	  10000000,
+	  20000000,
+	  50000000,
+	 100000000,
+	 200000000,
+	 500000000,
+	1000000000,
+};
+static char *bucket_label[] = {
+	" 0 ",
+	".2 ",
+	".5 ",
+	" 1 ",
+	" 2 ",
+	" 5 ",
+	"10 ",
+	"20 ",
+	"50 ",
+	"100",
+	"200",
+	"500",
+	">1s",
+	"ovf",
+};
+#define buckets_cnt (sizeof(buckets) / sizeof(*buckets))
+#define SUB_BUCKET_CNT 5
+#define HISTOGRAM_HEIGHT 10
+
+static inline size_t time_get_bucket(uint64_t time)
+{
+	size_t i;
+
+	for (i = 0; i < buckets_cnt; i++) {
+		if (time <= buckets[i])
+			return i - 1;
+	}
+
+	return buckets_cnt;
+}
+
+static inline size_t time_get_sub_bucket(size_t bucket, uint64_t time)
+{
+	uint64_t min;
+	uint64_t max;
+
+	min = buckets[bucket];
+	if (bucket + 1 < buckets_cnt)
+		max = buckets[bucket + 1];
+	else
+		max = min;
+
+	if (max - min == 0)
+		return 0;
+	if (time < min)
+		return 0;
+	if (time > max)
+		return SUB_BUCKET_CNT - 1;
+
+	time = time - min;
+
+	return (time * SUB_BUCKET_CNT) / (max - min);
+}
+
+void print_histogram(const test_result_t *res)
+{
+	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
+	size_t i, j;
+	uint64_t max;
+	uint64_t sbcnt;
+
+	if (!res->completion)
+		return;
+
+	sbcnt = SUB_BUCKET_CNT * buckets_cnt;
+	/*
+	 * Categorize the completion times in buckets and sub buckets.
+	 * Every bucket has SUB_BUCKET_CNT sub buckets, so divide the result
+	 * into proper one.
+	 */
+	for (i = 0; i < res->frames_written; i++) {
+		size_t b = time_get_bucket(res->completion[i]);
+		size_t sb = time_get_sub_bucket(b, res->completion[i]);
+
+		++cnts[b * SUB_BUCKET_CNT + sb];
+	}
+
+	/* Maximum value for scale */
+	max = 0;
+	for (i = 0; i < sbcnt; i++) {
+		if (cnts[i] > max)
+			max = cnts[i];
+	}
+
+	printf("\nCompletion times:\n");
+	for (j = 0; j < HISTOGRAM_HEIGHT; j++) {
+		printf("|");
+		for (i = 0; i < sbcnt; i++) {
+			uint64_t th;
+			uint64_t rth;
+
+			th = cnts[i] * HISTOGRAM_HEIGHT / (max + 1);
+			rth = HISTOGRAM_HEIGHT - 1 - th;
+
+
+			if (j > rth)
+				printf("*");
+			else if (cnts[i] && j == HISTOGRAM_HEIGHT - 1)
+				printf("*");
+			else
+				printf(" ");
+		}
+		printf("\n");
+	}
+	printf("|");
+	for (i = 0; i < sbcnt; i++) {
+		if (i % SUB_BUCKET_CNT == 0)
+			printf("|");
+		else
+			printf("-");
+	}
+	printf("\n");
+	for (i = 0; i < sbcnt; i++) {
+		size_t b;
+
+		b = i / SUB_BUCKET_CNT;
+		if (i % SUB_BUCKET_CNT == 0)
+			printf("%s", bucket_label[b]);
+		else if (i % SUB_BUCKET_CNT >= 3)
+			printf(" ");
+	}
+	printf("\n");
+}
 
 void print_frames_stat(const test_result_t *res, int csv)
 {
@@ -265,8 +407,11 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 	if (!res) {
 		if (opts->csv)
 			print_results_csv(tst, opts, &tres);
-		else
+		else {
 			print_results(tst, &tres);
+			if (opts->histogram)
+				print_histogram(&tres);
+		}
 	}
 	result_free(&tres);
 	free(threads);
@@ -454,6 +599,7 @@ static struct option long_opts[] = {
 	{ "csv", no_argument, 0, 'c' },
 	{ "no-csv-header", no_argument, 0, 0 },
 	{ "header", required_argument, 0, 0 },
+	{ "histogram", no_argument, 0, 0 },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -471,6 +617,7 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "csv", "Output results in CSV format" },
 	{ "no-csv-header", "Do not print CSV header" },
 	{ "header", "Frame header size (default 64k)" },
+	{ "histogram", "Show histogram of completion times at the end" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
@@ -525,6 +672,8 @@ int main(int argc, char **argv)
 		case 0:
 			if (!strcmp(long_opts[opt_index].name, "no-csv-header"))
 				opts.no_csv_header = 1;
+			if (!strcmp(long_opts[opt_index].name, "histogram"))
+				opts.histogram = 1;
 			if (!strcmp(long_opts[opt_index].name, "header")) {
 				if (opt_parse_header_size(&opts, optarg))
 					goto invalid_long;
