@@ -4,7 +4,7 @@ HEADERS := $(wildcard *.h)
 
 all: tframetest
 
-tframetest: profile.o frame.o tester.o frametest.o
+tframetest: profile.o frame.o tester.o frametest.o histogram.o report.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c $(HEADERS)
