@@ -89,9 +89,9 @@ void print_results(const char *tcase, const test_result_t *res)
 	printf(" time  : %lu\n", res->time_taken_ns);
 	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
 			/ res->time_taken_ns);
-	printf(" B/s   : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
+	printf(" B/s   : %lf\n", (double)res->bytes_written * SEC_IN_NS
 			/ res->time_taken_ns);
-	printf(" MiB/s : %lf\n", (double)(res->bytes_written * SEC_IN_NS)
+	printf(" MiB/s : %lf\n", (double)res->bytes_written * SEC_IN_NS
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
 	print_frames_stat(res, 0);
@@ -119,9 +119,9 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 	printf("%lu,", res->time_taken_ns);
 	printf("%lf,", (double)res->frames_written * SEC_IN_NS
 			/ res->time_taken_ns);
-	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+	printf("%lf,", (double)res->bytes_written * SEC_IN_NS
 			/ res->time_taken_ns);
-	printf("%lf,", (double)(res->bytes_written * SEC_IN_NS)
+	printf("%lf,", (double)res->bytes_written * SEC_IN_NS
 			/ (1024 * 1024)
 			/ res->time_taken_ns);
 	print_frames_stat(res, 1);
