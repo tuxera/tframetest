@@ -21,12 +21,19 @@ typedef struct testset_t {
 	uint64_t time_taken_ns;
 } testset_t;
 
+typedef struct test_completion_t {
+	uint64_t open;
+	uint64_t io;
+	uint64_t close;
+	uint64_t frame;
+} test_completion_t;
+
 typedef struct test_result_t {
 	uint64_t frames_written;
 	uint64_t bytes_written;
 	uint64_t write_time_taken_ns;
 	uint64_t time_taken_ns;
-	uint64_t *completion;
+	test_completion_t *completion;
 } test_result_t;
 
 typedef enum test_mode_t {
@@ -56,7 +63,7 @@ static inline void result_free(test_result_t *res)
 
 static inline int test_result_aggregate(test_result_t *dst, test_result_t *src)
 {
-	uint64_t *tmp;
+	test_completion_t *tmp;
 	size_t frm;
 
 	if (!dst || !src)

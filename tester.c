@@ -42,7 +42,7 @@ uint64_t tester_stop(uint64_t start)
 }
 
 size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
-		size_t num)
+		size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	uint64_t start;
@@ -52,15 +52,20 @@ size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
 	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
 	name[PATH_MAX] = 0;
 
+	start = tester_start();
 	f = open(name, O_CREAT | O_DIRECT | O_WRONLY, 0666);
 	if (f <= 0)
 		return 0;
+	comp->open = tester_stop(start);
 
 	start = tester_start();
 	ret = frame_write(f, frame);
-	res->write_time_taken_ns += tester_stop(start);
+	comp->io = tester_stop(start);
+	res->write_time_taken_ns += comp->io;
 
+	start = tester_start();
 	close(f);
+	comp->close = tester_stop(start);
 
 	/* Faking the output! */
 	if (!ret && !frame->size)
@@ -69,7 +74,7 @@ size_t tester_frame_write(test_result_t *res, const char *path, frame_t *frame,
 }
 
 size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
-		size_t num)
+		size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	uint64_t start;
@@ -79,15 +84,20 @@ size_t tester_frame_read(test_result_t *res, const char *path, frame_t *frame,
 	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
 	name[PATH_MAX] = 0;
 
+	start = tester_start();
 	f = open(name, O_DIRECT | O_RDONLY);
 	if (f <= 0)
 		return 0;
+	comp->open = tester_stop(start);
 
 	start = tester_start();
 	ret = frame_read(f, frame);
-	res->write_time_taken_ns += tester_stop(start);
+	comp->io = tester_stop(start);
+	res->write_time_taken_ns += comp->io;
 
+	start = tester_start();
 	close(f);
+	comp->close = tester_stop(start);
 
 	/* Faking the output! */
 	if (!ret && !frame->size)
@@ -153,24 +163,25 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 
 	for (i = start_frame; i < end_frame; i++) {
 		uint64_t frame_start = tester_start();
+		size_t frame_idx;
 
 		switch (mode) {
 		case TEST_REVERSE:
-			if (!tester_frame_write(&res, path, frame,
-					end_frame - i + start_frame - 1))
-				return res;
+			frame_idx = end_frame - i + start_frame - 1;
 			break;
 		case TEST_RANDOM:
-			if (!tester_frame_write(&res, path, frame,
-					seq[i - start_frame]))
-				return res;
+			frame_idx = seq[i - start_frame];
 			break;
 		case TEST_NORM:
-			if (!tester_frame_write(&res, path, frame, i))
-				return res;
+		default:
+			frame_idx = i;
 			break;
 		}
-		res.completion[i - start_frame] = tester_stop(frame_start);
+		if (!tester_frame_write(&res, path, frame, frame_idx,
+				&res.completion[i - start_frame]))
+			break;
+		res.completion[i - start_frame].frame =
+				tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
 		/* If fps limit is enabled loop until frame budget is gone */
@@ -219,24 +230,25 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 
 	for (i = start_frame; i < start_frame + frames; i++) {
 		uint64_t frame_start = tester_start();
+		size_t frame_idx;
 
 		switch (mode) {
 		case TEST_REVERSE:
-			if (!tester_frame_read(&res, path, frame,
-					end_frame - i + start_frame - 1))
-				return res;
+			frame_idx = end_frame - i + start_frame - 1;
 			break;
 		case TEST_RANDOM:
-			if (!tester_frame_read(&res, path, frame,
-					seq[i - start_frame]))
-				return res;
+			frame_idx = seq[i - start_frame];
 			break;
 		case TEST_NORM:
-			if (!tester_frame_read(&res, path, frame, i))
-				return res;
+		default:
+			frame_idx = i;
 			break;
 		}
-		res.completion[i - start_frame] = tester_stop(frame_start);
+		if (!tester_frame_read(&res, path, frame, frame_idx,
+				&res.completion[i - start_frame]))
+			return res;
+		res.completion[i - start_frame].frame =
+				tester_stop(frame_start);
 		++res.frames_written;
 		res.bytes_written += frame->size;
 		/* If fps limit is enabled loop until frame budget is gone */
