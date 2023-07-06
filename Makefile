@@ -20,6 +20,6 @@ unittest: unittest.o test_frame.o test_profile.o test_tester.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *.o tframetest tframetest.exe libtframetest.a
+	rm -f *.o tframetest tframetest.exe libtframetest.a unittest
 
 .PHONY: all clean
