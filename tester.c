@@ -1,4 +1,4 @@
-#include <linux/limits.h>
+#ifdef __linux__
 #if __STDC_VERSION__ >= 199901L
 #define _XOPEN_SOURCE 600
 #else
@@ -6,6 +6,8 @@
 #endif
 /* For O_DIRECT */
 #define _GNU_SOURCE
+#endif
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
