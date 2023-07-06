@@ -7,6 +7,7 @@
 #include <string.h>
 #include "frametest.h"
 #include "frame.h"
+#include "platform.h"
 
 typedef struct testset_t {
 	const char *path;
@@ -27,13 +28,13 @@ typedef enum test_mode_t {
 
 uint64_t tester_start(void);
 uint64_t tester_stop(uint64_t);
-test_result_t tester_run_write(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps,
+test_result_t tester_run_write(const platform_t *platform, const char *path,
+		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
 		test_mode_t mode);
-test_result_t tester_run_read(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps,
+test_result_t tester_run_read(const platform_t *platform, const char *path,
+		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
 		test_mode_t mode);
-frame_t *tester_get_frame_read(const char *path);
+frame_t *tester_get_frame_read(const platform_t *platform, const char *path);
 
 static inline void result_free(test_result_t *res)
 {

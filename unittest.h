@@ -1,6 +1,8 @@
 #ifndef FRAMETEST_UNITTEST_H
 #define FRAMETEST_UNITTEST_H
 
+#include "platform.h"
+
 #define TEST_INIT() unsigned long ok = 0; unsigned long tests = 0;
 #define TEST(X) ++tests; if (!test_ ## X ()) ++ok; else { \
 	printf(" FAILED: %s\n", #X); return 1; }
@@ -17,5 +19,8 @@
 #define TEST_ASSERT_EQ_STR(X, Y) if (strcmp(X, Y)) {\
 	printf(" ASSERT: %s == %s @%s:%u\n", #X, #Y, \
 		__FILE__, __LINE__); return 1; }
+
+const platform_t * test_platform_get(void);
+void test_platform_finalize(void);
 
 #endif

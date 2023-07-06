@@ -13,26 +13,9 @@
 
 #define ALIGN_SIZE 4096
 
-
-int platform_aligned_alloc(void **res, size_t align, size_t size)
+frame_t *frame_gen(const platform_t *platform, profile_t profile)
 {
-#ifdef _WIN32
-	void *tmp;
-
-	tmp = _aligned_malloc(size, align);
-	if (!tmp)
-		return 1;
-	*res = tmp;
-
-	return 0;
-#else
-	return posix_memalign(res, align, size);
-#endif
-}
-
-frame_t *frame_gen(profile_t profile)
-{
-	frame_t *res = calloc(1, sizeof(*res));
+	frame_t *res = platform->calloc(1, sizeof(*res));
 
 	if (!res)
 		return NULL;
@@ -46,12 +29,12 @@ frame_t *frame_gen(profile_t profile)
 		res->size += ALIGN_SIZE - extra;
 	}
 
-	if (platform_aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
-		free(res);
+	if (platform->aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
+		platform->free(res);
 		return NULL;
 	}
 	if (!res->data) {
-		free(res);
+		platform->free(res);
 		return NULL;
 	}
 	(void)frame_fill(res, 't');
@@ -59,7 +42,7 @@ frame_t *frame_gen(profile_t profile)
 	return res;
 }
 
-frame_t *frame_from_file(const char *fname)
+frame_t *frame_from_file(const platform_t *platform, const char *fname)
 {
 	struct stat st;
 	frame_t *res;
@@ -68,7 +51,7 @@ frame_t *frame_from_file(const char *fname)
 		return NULL;
 	}
 
-	res = calloc(1, sizeof(*res));
+	res = platform->calloc(1, sizeof(*res));
 	if (!res)
 		return NULL;
 
@@ -88,12 +71,12 @@ frame_t *frame_from_file(const char *fname)
 		res->profile.height = 1;
 		res->profile.header_size = 0;
 
-		if (platform_aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
-			free(res);
+		if (platform->aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
+			platform->free(res);
 			return NULL;
 		}
 		if (!res->data) {
-			free(res);
+			platform->free(res);
 			return NULL;
 		}
 	}
@@ -101,13 +84,13 @@ frame_t *frame_from_file(const char *fname)
 	return res;
 }
 
-void frame_destroy(frame_t *frame)
+void frame_destroy(const platform_t *platform, frame_t *frame)
 {
 	if (!frame)
 		return;
 	if (frame->data)
-		free(frame->data);
-	free(frame);
+		platform->free(frame->data);
+	platform->free(frame);
 }
 
 size_t frame_fill(frame_t *frame, char val)
@@ -119,7 +102,8 @@ size_t frame_fill(frame_t *frame, char val)
 	return i;
 }
 
-size_t frame_write(int f, frame_t *frame)
+size_t frame_write(const platform_t *platform, platform_handle_t f,
+		frame_t *frame)
 {
 	if (!f || !frame)
 		return 0;
@@ -131,10 +115,11 @@ size_t frame_write(int f, frame_t *frame)
 #endif
 
 	/* Avoid buffered writes if possible */
-	return write(f, frame->data, frame->size);
+	return platform->write(f, frame->data, frame->size);
 }
 
-size_t frame_read(int f, frame_t *frame)
+size_t frame_read(const platform_t *platform, platform_handle_t f,
+		frame_t *frame)
 {
 	size_t res = 0;
 
@@ -145,7 +130,8 @@ size_t frame_read(int f, frame_t *frame)
 	while (res < frame->size) {
 		size_t readcnt;
 
-		readcnt = read(f, (char*)frame->data + res, frame->size - res);
+		readcnt = platform->read(f, (char*)frame->data + res,
+				frame->size - res);
 		if (readcnt == 0)
 			break;
 		res += readcnt;

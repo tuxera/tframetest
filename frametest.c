@@ -15,11 +15,13 @@
 #include "histogram.h"
 #include "frametest.h"
 #include "report.h"
+#include "platform.h"
 
 typedef struct thread_info_t {
 	size_t id;
 	pthread_t thread;
 
+	const platform_t *platform;
 	const opts_t *opts;
 	test_result_t res;
 
@@ -42,8 +44,9 @@ void *run_write_test_thread(void *arg)
 		mode = TEST_REVERSE;
 	else if (info->opts->random)
 		mode = TEST_RANDOM;
-	info->res = tester_run_write(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames, info->fps, mode);
+	info->res = tester_run_write(info->platform, info->opts->path,
+			info->opts->frm, info->start_frame, info->frames,
+			info->fps, mode);
 
 	return NULL;
 }
@@ -62,8 +65,9 @@ void *run_read_test_thread(void *arg)
 		mode = TEST_REVERSE;
 	else if (info->opts->random)
 		mode = TEST_RANDOM;
-	info->res = tester_run_read(info->opts->path, info->opts->frm,
-			info->start_frame, info->frames, info->fps, mode);
+	info->res = tester_run_read(info->platform, info->opts->path,
+			info->opts->frm, info->start_frame, info->frames,
+			info->fps, mode);
 
 	return NULL;
 }
@@ -101,7 +105,8 @@ void calculate_frame_range(thread_info_t *threads, const opts_t *opts)
 	}
 }
 
-int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
+int run_test_threads(const platform_t *platform, const char *tst,
+		const opts_t *opts, void *(*tfunc)(void*))
 {
 	size_t i;
 	int res;
@@ -109,7 +114,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 	test_result_t tres = {0};
 	uint64_t start;
 
-	threads = calloc(opts->threads, sizeof(*threads));
+	threads = platform->calloc(opts->threads, sizeof(*threads));
 	if (!threads)
 		return 1;
 
@@ -120,6 +125,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 		int res;
 
 		threads[i].id = i;
+		threads[i].platform = platform;
 		threads[i].opts = opts;
 		res = pthread_create(&threads[i].thread, NULL,
 				tfunc, (void*)&threads[i]);
@@ -131,7 +137,7 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 				pthread_cancel(threads[j].thread);
 			for (j = 0; j < i; j++)
 				pthread_join(threads[j].thread, &ret);
-			free(threads);
+			platform->free(threads);
 			return 1;
 		}
 	}
@@ -163,16 +169,18 @@ int run_test_threads(const char *tst, const opts_t *opts, void *(*tfunc)(void*))
 		}
 	}
 	result_free(&tres);
-	free(threads);
+	platform->free(threads);
 	return res;
 }
 
 int run_tests(opts_t *opts)
 {
+	const platform_t *platform = NULL;
 
 	if (!opts)
 		return 1;
 
+	platform = platform_get();
 	if (opts->profile.prof == PROF_INVALID &&
 			opts->prof != PROF_INVALID) {
 		opts->profile = profile_get_by_type(opts->prof);
@@ -196,10 +204,10 @@ int run_tests(opts_t *opts)
 	opts->profile.header_size = (opts->mode & TEST_EMPTY)
 			? 0 : opts->header_size;
 	if (opts->mode & TEST_WRITE)
-		opts->frm = frame_gen(opts->profile);
+		opts->frm = frame_gen(platform, opts->profile);
 	else if (opts->mode & TEST_READ) {
 		if (!opts->frm) {
-			opts->frm = tester_get_frame_read(opts->path);
+			opts->frm = tester_get_frame_read(platform, opts->path);
 		}
 		if (!opts->frm) {
 			fprintf(stderr, "Can't allocate frame\n");
@@ -218,12 +226,13 @@ int run_tests(opts_t *opts)
 			fprintf(stderr, "Can't allocate frame\n");
 			return 1;
 		}
-		run_test_threads("write", opts, &run_write_test_thread);
+		run_test_threads(platform, "write", opts,
+				&run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {
-		run_test_threads("read", opts, &run_read_test_thread);
+		run_test_threads(platform, "read", opts, &run_read_test_thread);
 	}
-	frame_destroy(opts->frm);
+	frame_destroy(platform, opts->frm);
 
 	return 0;
 }

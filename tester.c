@@ -4,26 +4,13 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
-/* For O_DIRECT */
-#define _GNU_SOURCE
 #endif
 
 #include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 
 #include "tester.h"
-
-#ifdef _WIN32
-/* Faking O_DIRECT for now... */
-#ifndef O_DIRECT
-#define O_DIRECT 0
-#endif
-#endif
 
 static inline uint64_t tester_time(void)
 {
@@ -51,28 +38,31 @@ uint64_t tester_stop(uint64_t start)
 	return tester_time() - start;
 }
 
-static inline size_t tester_frame_write(test_result_t *res, const char *path,
-		frame_t *frame, size_t num, test_completion_t *comp)
+static inline size_t tester_frame_write(const platform_t *platform,
+		test_result_t *res, const char *path, frame_t *frame,
+		size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	uint64_t start;
 	size_t ret;
-	int f;
+	platform_handle_t f;
 
 	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
-	f = open(name, O_CREAT | O_DIRECT | O_WRONLY, 0666);
+	f = platform->open(name, PLATFORM_OPEN_CREATE
+			| PLATFORM_OPEN_WRITE
+			| PLATFORM_OPEN_DIRECT, 0666);
 	if (f <= 0)
 		return 0;
 	comp->open = tester_start();
 
 	start = tester_start();
-	ret = frame_write(f, frame);
+	ret = frame_write(platform, f, frame);
 	res->write_time_taken_ns += tester_stop(start);
 	comp->io = tester_start();
 
-	close(f);
+	platform->close(f);
 	comp->close = tester_start();
 
 	/* Faking the output! */
@@ -81,28 +71,30 @@ static inline size_t tester_frame_write(test_result_t *res, const char *path,
 	return ret;
 }
 
-static inline size_t tester_frame_read(test_result_t *res, const char *path,
-		frame_t *frame, size_t num, test_completion_t *comp)
+static inline size_t tester_frame_read(const platform_t *platform,
+		test_result_t *res, const char *path, frame_t *frame,
+		size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	uint64_t start;
 	size_t ret;
-	int f;
+	platform_handle_t f;
 
 	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
-	f = open(name, O_DIRECT | O_RDONLY);
+	f = platform->open(name, PLATFORM_OPEN_READ
+			| PLATFORM_OPEN_DIRECT, 0666);
 	if (f <= 0)
 		return 0;
 	comp->open = tester_start();
 
 	start = tester_start();
-	ret = frame_read(f, frame);
+	ret = frame_read(platform, f, frame);
 	res->write_time_taken_ns += tester_stop(start);
 	comp->io = tester_start();
 
-	close(f);
+	platform->close(f);
 	comp->close = tester_start();
 
 	/* Faking the output! */
@@ -111,14 +103,14 @@ static inline size_t tester_frame_read(test_result_t *res, const char *path,
 	return ret;
 }
 
-frame_t *tester_get_frame_read(const char *path)
+frame_t *tester_get_frame_read(const platform_t *platform, const char *path)
 {
 	char name[PATH_MAX + 1];
 
 	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, 0UL);
 	name[PATH_MAX] = 0;
 
-	return frame_from_file(name);
+	return frame_from_file(platform, name);
 }
 
 static inline void shuffle_array(size_t *arr, size_t size)
@@ -138,8 +130,8 @@ static inline void shuffle_array(size_t *arr, size_t size)
 	}
 }
 
-test_result_t tester_run_write(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps,
+test_result_t tester_run_write(const platform_t *platform, const char *path,
+		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
 		test_mode_t mode)
 {
 	test_result_t res = {0};
@@ -150,7 +142,7 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
-	res.completion = calloc(frames, sizeof(*res.completion));
+	res.completion = platform->calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
 		return res;
 
@@ -158,7 +150,7 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 	end_frame = start_frame + frames;
 
 	if (mode == TEST_RANDOM) {
-		seq = malloc(sizeof(*seq) * frames);
+		seq = platform->malloc(sizeof(*seq) * frames);
 		if (!seq)
 			return res;
 
@@ -184,7 +176,7 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_write(&res, path, frame, frame_idx,
+		if (!tester_frame_write(platform, &res, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			break;
 		res.completion[i - start_frame].frame = tester_start();
@@ -195,18 +187,18 @@ test_result_t tester_run_write(const char *path, frame_t *frame,
 			uint64_t frame_elapsed = tester_stop(frame_start);
 
 			while (frame_elapsed < budget) {
-				usleep(100);
+				platform->usleep(100);
 				frame_elapsed = tester_stop(frame_start);
 			}
 		}
 	}
 	if (seq)
-		free(seq);
+		platform->free(seq);
 	return res;
 }
 
-test_result_t tester_run_read(const char *path, frame_t *frame,
-		size_t start_frame, size_t frames, size_t fps,
+test_result_t tester_run_read(const platform_t *platform, const char *path,
+		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
 		test_mode_t mode)
 {
 	test_result_t res = {0};
@@ -217,7 +209,7 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 
-	res.completion = calloc(frames, sizeof(*res.completion));
+	res.completion = platform->calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
 		return res;
 
@@ -225,7 +217,7 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 	end_frame = start_frame + frames;
 
 	if (mode == TEST_RANDOM) {
-		seq = malloc(sizeof(*seq) * frames);
+		seq = platform->malloc(sizeof(*seq) * frames);
 		if (!seq)
 			return res;
 
@@ -251,7 +243,7 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_read(&res, path, frame, frame_idx,
+		if (!tester_frame_read(platform, &res, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			return res;
 		res.completion[i - start_frame].frame = tester_start();
@@ -262,12 +254,12 @@ test_result_t tester_run_read(const char *path, frame_t *frame,
 			uint64_t frame_elapsed = tester_stop(frame_start);
 
 			while (frame_elapsed < budget) {
-				usleep(100);
+				platform->usleep(100);
 				frame_elapsed = tester_stop(frame_start);
 			}
 		}
 	}
 	if (seq)
-		free(seq);
+		platform->free(seq);
 	return res;
 }
