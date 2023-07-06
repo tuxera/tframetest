@@ -324,7 +324,7 @@ void list_profiles(void)
 		profile_t prof = profile_get_by_index(i);
 
 		printf("  %s\n", prof.name);
-		printf("     %lux%lu, %lu bits, %luB header\n",
+		printf("     %zux%zu, %zu bits, %zuB header\n",
 				prof.width, prof.height,
 				prof.bytes_per_pixel * 8,
 				prof.header_size);

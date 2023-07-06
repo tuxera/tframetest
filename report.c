@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include "frametest.h"
@@ -47,9 +48,9 @@ static void print_stat_about(const test_result_t *res, const char *label,
 		total += val;
 	}
 	if (csv) {
-		printf("%lu,", min);
+		printf("%" PRIu64 ",", min);
 		printf("%lf,", (double)total / res->frames_written);
-		printf("%lu,", max);
+		printf("%" PRIu64 ",", max);
 	} else {
 		printf("%s:\n", label);
 		printf(" min   : %lf ms\n", (double)min / SEC_IN_MS);
@@ -92,14 +93,15 @@ static void print_frame_times(const test_result_t *res, const opts_t *opts)
 
 	printf("frame,start,open,io,close,frame\n");
 	for (i = 0; i < res->frames_written; i++) {
-		printf("%lu,%lu,%lu,%lu,%lu,%lu\n",
-		       i,
-		       res->completion[i].start,
-		       res->completion[i].open,
-		       res->completion[i].io,
-		       res->completion[i].close,
-		       res->completion[i].frame
-		       );
+		printf("%zu,%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64
+				",%" PRIu64 "\n",
+				i,
+				res->completion[i].start,
+				res->completion[i].open,
+				res->completion[i].io,
+				res->completion[i].close,
+				res->completion[i].frame
+				);
 	}
 }
 
@@ -112,9 +114,9 @@ void print_results(const char *tcase, const opts_t *opts,
 		return;
 
 	printf("Results %s:\n", tcase);
-	printf(" frames: %lu\n", res->frames_written);
-	printf(" bytes : %lu\n", res->bytes_written);
-	printf(" time  : %lu\n", res->time_taken_ns);
+	printf(" frames: %" PRIu64 "\n", res->frames_written);
+	printf(" bytes : %" PRIu64 "\n", res->bytes_written);
+	printf(" time  : %" PRIu64 "\n", res->time_taken_ns);
 	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
 			/ res->time_taken_ns);
 	printf(" B/s   : %lf\n", (double)res->bytes_written * SEC_IN_NS
@@ -147,10 +149,10 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 
 	printf("\"%s\",", tcase);
 	printf("\"%s\",", opts->profile.name);
-	printf("%lu,", opts->threads);
-	printf("%lu,", res->frames_written);
-	printf("%lu,", res->bytes_written);
-	printf("%lu,", res->time_taken_ns);
+	printf("%zu,", opts->threads);
+	printf("%" PRIu64 ",", res->frames_written);
+	printf("%" PRIu64 ",", res->bytes_written);
+	printf("%" PRIu64 ",", res->time_taken_ns);
 	printf("%lf,", (double)res->frames_written * SEC_IN_NS
 			/ res->time_taken_ns);
 	printf("%lf,", (double)res->bytes_written * SEC_IN_NS

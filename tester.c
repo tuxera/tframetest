@@ -7,6 +7,7 @@
 /* For O_DIRECT */
 #define _GNU_SOURCE
 #endif
+
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -16,6 +17,13 @@
 #include <unistd.h>
 
 #include "tester.h"
+
+#ifdef _WIN32
+/* Faking O_DIRECT for now... */
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
+#endif
 
 static inline uint64_t tester_time(void)
 {
@@ -51,7 +59,7 @@ static inline size_t tester_frame_write(test_result_t *res, const char *path,
 	size_t ret;
 	int f;
 
-	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
+	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
 	f = open(name, O_CREAT | O_DIRECT | O_WRONLY, 0666);
@@ -81,7 +89,7 @@ static inline size_t tester_frame_read(test_result_t *res, const char *path,
 	size_t ret;
 	int f;
 
-	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, num);
+	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
 	f = open(name, O_DIRECT | O_RDONLY);

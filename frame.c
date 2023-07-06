@@ -13,6 +13,23 @@
 
 #define ALIGN_SIZE 4096
 
+
+int platform_aligned_alloc(void **res, size_t align, size_t size)
+{
+#ifdef _WIN32
+	void *tmp;
+
+	tmp = _aligned_malloc(size, align);
+	if (!tmp)
+		return 1;
+	*res = tmp;
+
+	return 0;
+#else
+	return posix_memalign(res, align, size);
+#endif
+}
+
 frame_t *frame_gen(profile_t profile)
 {
 	frame_t *res = calloc(1, sizeof(*res));
@@ -29,7 +46,7 @@ frame_t *frame_gen(profile_t profile)
 		res->size += ALIGN_SIZE - extra;
 	}
 
-	if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
+	if (platform_aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
 		free(res);
 		return NULL;
 	}
@@ -71,7 +88,7 @@ frame_t *frame_from_file(const char *fname)
 		res->profile.height = 1;
 		res->profile.header_size = 0;
 
-		if (posix_memalign(&res->data, ALIGN_SIZE, res->size)) {
+		if (platform_aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
 			free(res);
 			return NULL;
 		}
