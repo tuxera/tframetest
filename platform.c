@@ -13,6 +13,7 @@
 #include "platform.h"
 
 #ifdef _WIN32
+#include <windows.h>
 /* Faking O_DIRECT for now... */
 #ifndef O_DIRECT
 #define O_DIRECT 0
@@ -45,14 +46,41 @@ int generic_resolve_flags(platform_open_flags_t flags)
 static inline platform_handle_t win_open(const char *fname,
 	platform_open_flags_t flags, int mode)
 {
-	int oflags = generic_resolve_flags(flags);
+	unsigned int access = 0;
+	unsigned int creat = 0;
+	unsigned int oflags = 0;
+	HANDLE h;
 
-	return open(fname, oflags, mode);
+	if (flags & PLATFORM_OPEN_WRITE)
+		access |= GENERIC_WRITE;
+	if (flags & PLATFORM_OPEN_READ)
+		access |= GENERIC_READ;
+
+	if (flags & PLATFORM_OPEN_CREATE)
+		creat = CREATE_ALWAYS;
+	else
+		creat = OPEN_EXISTING;
+
+	if (flags & (PLATFORM_OPEN_DIRECT)) {
+		oflags |= FILE_FLAG_NO_BUFFERING;
+		oflags |= FILE_FLAG_WRITE_THROUGH;
+	}
+
+	h = CreateFile(fname,
+			access,
+			0,
+			NULL,
+			creat,
+			oflags,
+			NULL);
+	if (h == INVALID_HANDLE_VALUE)
+		return -1;
+	return _open_osfhandle((long)h, 0);
 }
 
 static inline int win_close(platform_handle_t handle)
 {
-	return close(handle);
+	return _close(handle);
 }
 
 static inline size_t win_write(platform_handle_t handle, const char *buf,
