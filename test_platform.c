@@ -46,8 +46,11 @@ static inline platform_handle_t test_platform_open(const char *fname,
 			}
 		}
 	}
+	if (!idx && !(mode & (PLATFORM_OPEN_CREATE)))
+		return 0;
 	if (!idx) {
 		test_platform_file_t *tmp = NULL;
+
 		++file_cnt;
 		tmp = realloc(files, sizeof(*tmp) * file_cnt);
 		if (!tmp) {

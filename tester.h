@@ -21,9 +21,9 @@ typedef struct testset_t {
 } testset_t;
 
 typedef enum test_mode_t {
-	TEST_NORM = 0,
-	TEST_REVERSE,
-	TEST_RANDOM,
+	TEST_MODE_NORM = 0,
+	TEST_MODE_REVERSE,
+	TEST_MODE_RANDOM,
 } test_mode_t;
 
 uint64_t tester_start(void);

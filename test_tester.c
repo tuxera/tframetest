@@ -7,6 +7,8 @@
 
 #define SLEEP_TIME 1000UL
 
+static const platform_t *tester_platform = NULL;
+
 int test_tester_start_stop(void)
 {
 	uint64_t start;
@@ -25,12 +27,55 @@ int test_tester_start_stop(void)
 	return 0;
 }
 
-int test_tester_run_write(void)
+static frame_t *gen_default_frame(void)
 {
-	/*
-	 * TODO tester_run_write() needs path and I/O access to files.
-	 * We should fake those OR create a temporary folder.
-	 */
+	profile_t prof;
+
+	prof = profile_get_by_index(1);
+	return frame_gen(tester_platform, prof);
+}
+
+int test_tester_run_write_read(void)
+{
+	const size_t frames = 5;
+	test_result_t res;
+	test_result_t res_read;
+	platform_handle_t f;
+	frame_t *frm;
+	frame_t *frm_res;
+
+
+	frm = gen_default_frame();
+	TEST_ASSERT(frm);
+
+	frame_fill(frm, 0x66);
+
+	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
+	TEST_ASSERT_EQ(f, 0);
+
+	res = tester_run_write(tester_platform, ".", frm, 0, frames, 0,
+		TEST_MODE_NORM);
+
+	TEST_ASSERT_EQ(res.frames_written, frames);
+	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
+	TEST_ASSERT_NE(res.write_time_taken_ns, 0);
+	TEST_ASSERT(res.completion);
+
+	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
+	TEST_ASSERT_NE(f, 0);
+	tester_platform->close(f);
+
+	/* FIXME: after stat
+	frm_res = tester_get_frame_read(tester_platform, "."); */
+	frm_res = gen_default_frame();
+	TEST_ASSERT(frm_res);
+	res_read = tester_run_read(tester_platform, ".", frm_res, 0, frames,
+		0, TEST_MODE_NORM);
+	TEST_ASSERT_EQ(res_read.frames_written, frames);
+	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
+	TEST_ASSERT_NE(res_read.write_time_taken_ns, 0);
+	TEST_ASSERT(res_read.completion);
+
 	return 0;
 }
 
@@ -38,8 +83,12 @@ int test_tester(void)
 {
 	TEST_INIT();
 
+	tester_platform = test_platform_get();
+
 	TEST(tester_start_stop);
-	TEST(tester_run_write);
+	TEST(tester_run_write_read);
+
+	test_platform_finalize();
 
 	TEST_END();
 }

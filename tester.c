@@ -149,7 +149,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 	end_frame = start_frame + frames;
 
-	if (mode == TEST_RANDOM) {
+	if (mode == TEST_MODE_RANDOM) {
 		seq = platform->malloc(sizeof(*seq) * frames);
 		if (!seq)
 			return res;
@@ -165,13 +165,13 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 
 		res.completion[i - start_frame].start = frame_start;
 		switch (mode) {
-		case TEST_REVERSE:
+		case TEST_MODE_REVERSE:
 			frame_idx = end_frame - i + start_frame - 1;
 			break;
-		case TEST_RANDOM:
+		case TEST_MODE_RANDOM:
 			frame_idx = seq[i - start_frame];
 			break;
-		case TEST_NORM:
+		case TEST_MODE_NORM:
 		default:
 			frame_idx = i;
 			break;
@@ -216,7 +216,7 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 	budget = fps ? (SEC_IN_NS / fps) : 0;
 	end_frame = start_frame + frames;
 
-	if (mode == TEST_RANDOM) {
+	if (mode == TEST_MODE_RANDOM) {
 		seq = platform->malloc(sizeof(*seq) * frames);
 		if (!seq)
 			return res;
@@ -232,13 +232,13 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 
 		res.completion[i - start_frame].start = frame_start;
 		switch (mode) {
-		case TEST_REVERSE:
+		case TEST_MODE_REVERSE:
 			frame_idx = end_frame - i + start_frame - 1;
 			break;
-		case TEST_RANDOM:
+		case TEST_MODE_RANDOM:
 			frame_idx = seq[i - start_frame];
 			break;
-		case TEST_NORM:
+		case TEST_MODE_NORM:
 		default:
 			frame_idx = i;
 			break;

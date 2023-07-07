@@ -33,7 +33,7 @@ typedef struct thread_info_t {
 void *run_write_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
-	test_mode_t mode = TEST_NORM;
+	test_mode_t mode = TEST_MODE_NORM;
 
 	if (!arg)
 		return NULL;
@@ -41,9 +41,9 @@ void *run_write_test_thread(void *arg)
 		return NULL;
 
 	if (info->opts->reverse)
-		mode = TEST_REVERSE;
+		mode = TEST_MODE_REVERSE;
 	else if (info->opts->random)
-		mode = TEST_RANDOM;
+		mode = TEST_MODE_RANDOM;
 	info->res = tester_run_write(info->platform, info->opts->path,
 			info->opts->frm, info->start_frame, info->frames,
 			info->fps, mode);
@@ -54,7 +54,7 @@ void *run_write_test_thread(void *arg)
 void *run_read_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
-	test_mode_t mode = TEST_NORM;
+	test_mode_t mode = TEST_MODE_NORM;
 
 	if (!arg)
 		return NULL;
@@ -62,9 +62,9 @@ void *run_read_test_thread(void *arg)
 		return NULL;
 
 	if (info->opts->reverse)
-		mode = TEST_REVERSE;
+		mode = TEST_MODE_REVERSE;
 	else if (info->opts->random)
-		mode = TEST_RANDOM;
+		mode = TEST_MODE_RANDOM;
 	info->res = tester_run_read(info->platform, info->opts->path,
 			info->opts->frm, info->start_frame, info->frames,
 			info->fps, mode);
