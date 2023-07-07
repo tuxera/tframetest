@@ -3,7 +3,6 @@
  */
 
 #include <getopt.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +18,7 @@
 
 typedef struct thread_info_t {
 	size_t id;
-	pthread_t thread;
+	uint64_t thread;
 
 	const platform_t *platform;
 	const opts_t *opts;
@@ -127,16 +126,16 @@ int run_test_threads(const platform_t *platform, const char *tst,
 		threads[i].id = i;
 		threads[i].platform = platform;
 		threads[i].opts = opts;
-		res = pthread_create(&threads[i].thread, NULL,
+		res = platform->thread_create(&threads[i].thread,
 				tfunc, (void*)&threads[i]);
 		if (res) {
 			size_t j;
 			void *ret;
 
 			for (j = 0; j < i; j++)
-				pthread_cancel(threads[j].thread);
+				platform->thread_cancel(threads[j].thread);
 			for (j = 0; j < i; j++)
-				pthread_join(threads[j].thread, &ret);
+				platform->thread_join(threads[j].thread, &ret);
 			platform->free(threads);
 			return 1;
 		}
@@ -146,7 +145,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 	for (i = 0; i < opts->threads; i++) {
 		void *ret;
 
-		if (pthread_join(threads[i].thread, &ret))
+		if (platform->thread_join(threads[i].thread, &ret))
 			res = 1;
 		if (ret)
 			res = 1;

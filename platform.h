@@ -51,6 +51,11 @@ typedef struct platform_t {
 	int (*aligned_alloc)(void **res, size_t align, size_t size);
 	void (*free)(void *mem);
 
+	int (*thread_create)(uint64_t *thread_id, void*(*start)(void*),
+			void *arg);
+	int (*thread_cancel)(uint64_t thread_id);
+	int (*thread_join)(uint64_t thread_id, void **retval);
+
 	void *priv;
 } platform_t;
 

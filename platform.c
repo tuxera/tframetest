@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -103,6 +104,21 @@ static inline int win_stat(const char *fname, platform_stat_t *st)
 
 	return res;
 }
+
+int win_thread_create(uint64_t *thread_id, void*(*start)(void*), void *arg)
+{
+	return pthread_create((pthread_t*)thread_id, NULL, start, arg);
+}
+
+int win_thread_cancel(uint64_t thread_id)
+{
+	return pthread_cancel((pthread_t)thread_id);
+}
+
+int win_thread_join(uint64_t thread_id, void **retval)
+{
+	return pthread_join((pthread_t)thread_id, retval);
+}
 #else
 static inline platform_handle_t generic_open(const char *fname,
 	platform_open_flags_t flags, int mode)
@@ -157,6 +173,22 @@ static inline int generic_stat(const char *fname, platform_stat_t *st)
 
 	return res;
 }
+
+int generic_thread_create(uint64_t *thread_id, void*(*start)(void*), void *arg)
+{
+	return pthread_create((pthread_t*)thread_id, NULL, start, arg);
+}
+
+int generic_thread_cancel(uint64_t thread_id)
+{
+	return pthread_cancel((pthread_t)thread_id);
+}
+
+int generic_thread_join(uint64_t thread_id, void **retval)
+{
+	return pthread_join((pthread_t)thread_id, retval);
+}
+
 #endif
 
 static platform_t default_platform = {
@@ -171,6 +203,10 @@ static platform_t default_platform = {
 	.malloc = malloc,
 	.aligned_alloc = win_aligned_alloc,
 	.free = free,
+
+	.thread_create = win_thread_create,
+	.thread_cancel = win_thread_cancel,
+	.thread_join = win_thread_join,
 #else
 	.open = generic_open,
 	.close = generic_close,
@@ -182,6 +218,10 @@ static platform_t default_platform = {
 	.malloc = malloc,
 	.aligned_alloc = posix_memalign,
 	.free = free,
+
+	.thread_create = generic_thread_create,
+	.thread_cancel = generic_thread_cancel,
+	.thread_join = generic_thread_join,
 #endif
 };
 

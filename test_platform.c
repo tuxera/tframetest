@@ -158,6 +158,22 @@ static inline int test_platform_stat(const char *fname, platform_stat_t *st)
 	return 0;
 }
 
+int test_platform_thread_create(uint64_t *thread_id, void*(*start)(void*),
+		void *arg)
+{
+	return -1;
+}
+
+int test_platform_thread_cancel(uint64_t thread_id)
+{
+	return -1;
+}
+
+int test_platform_thread_join(uint64_t thread_id, void **retval)
+{
+	return -1;
+}
+
 static platform_t test_platform = {
 	.open = test_platform_open,
 	.close = test_platform_close,
@@ -171,6 +187,10 @@ static platform_t test_platform = {
 	.malloc = malloc,
 	.aligned_alloc = posix_memalign,
 	.free = free,
+
+	.thread_create = test_platform_thread_create,
+	.thread_cancel = test_platform_thread_cancel,
+	.thread_join = test_platform_thread_join,
 };
 
 
