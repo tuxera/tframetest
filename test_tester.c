@@ -44,37 +44,37 @@ int test_tester_run_write_read(void)
 	frame_t *frm;
 	frame_t *frm_res;
 
-
 	frm = gen_default_frame();
 	TEST_ASSERT(frm);
 
-	frame_fill(frm, 0x66);
-
 	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
-	TEST_ASSERT_EQ(f, 0);
+	TEST_ASSERT_EQ(f, -1);
 
 	res = tester_run_write(tester_platform, ".", frm, 0, frames, 0,
-		TEST_MODE_NORM);
+			TEST_MODE_NORM);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
 	TEST_ASSERT_NE(res.write_time_taken_ns, 0);
 	TEST_ASSERT(res.completion);
 
+	result_free(tester_platform, &res);
+
 	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
-	TEST_ASSERT_NE(f, 0);
+	TEST_ASSERT_NE(f, -1);
 	tester_platform->close(f);
 
-	/* FIXME: after stat
-	frm_res = tester_get_frame_read(tester_platform, "."); */
-	frm_res = gen_default_frame();
+	frm_res = tester_get_frame_read(tester_platform, ".");
 	TEST_ASSERT(frm_res);
+
 	res_read = tester_run_read(tester_platform, ".", frm_res, 0, frames,
-		0, TEST_MODE_NORM);
+			0, TEST_MODE_NORM);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT_NE(res_read.write_time_taken_ns, 0);
 	TEST_ASSERT(res_read.completion);
+
+	result_free(tester_platform, &res_read);
 
 	return 0;
 }

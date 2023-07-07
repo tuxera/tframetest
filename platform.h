@@ -20,6 +20,19 @@ typedef enum platform_seek_flags_t {
 	PLATFORM_SEEK_END = 3,
 } platform_seek_flags_t;
 
+typedef struct platform_stat_t {
+	uint64_t dev;
+	uint64_t rdev;
+	uint64_t ino;
+	uint64_t mode;
+	uint64_t nlink;
+	uint64_t uid;
+	uint64_t gid;
+	uint64_t size;
+	uint64_t blksize;
+	uint64_t blocks;
+} platform_stat_t;
+
 typedef struct platform_t {
 	platform_handle_t (*open)(const char *fname,
 		platform_open_flags_t flags, int mode);
@@ -31,9 +44,7 @@ typedef struct platform_t {
 			platform_seek_flags_t whence);
 #endif
 	int (*usleep)(uint64_t usec);
-#if 0
 	int (*stat)(const char *fname, platform_stat_t *statbuf);
-#endif
 
 	void * (*calloc)(size_t nmemb, size_t size);
 	void * (*malloc)(size_t size);

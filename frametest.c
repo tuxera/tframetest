@@ -156,7 +156,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 #endif
 		if (test_result_aggregate(&tres, &threads[i].res))
 		    res = 1;
-		result_free(&threads[i].res);
+		result_free(platform, &threads[i].res);
 	}
 	tres.time_taken_ns = tester_stop(start);
 	if (!res) {
@@ -168,7 +168,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 				print_histogram(&tres);
 		}
 	}
-	result_free(&tres);
+	result_free(platform, &tres);
 	platform->free(threads);
 	return res;
 }

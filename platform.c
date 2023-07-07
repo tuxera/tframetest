@@ -3,6 +3,7 @@
 #define _GNU_SOURCE
 #endif
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +81,28 @@ static inline int win_usleep(uint64_t us)
 {
 	return usleep((useconds_t)us);
 }
+
+static inline int win_stat(const char *fname, platform_stat_t *st)
+{
+	struct stat sb;
+	int res;
+
+	res = stat(fname, &sb);
+	if (res)
+		return res;
+	if (!st)
+		return res;
+
+	st->dev = sb.st_dev;
+	st->rdev = sb.st_rdev;
+	st->ino = sb.st_ino;
+	st->mode = sb.st_mode;
+	st->uid = sb.st_uid;
+	st->gid = sb.st_gid;
+	st->size = sb.st_size;
+
+	return res;
+}
 #else
 static inline platform_handle_t generic_open(const char *fname,
 	platform_open_flags_t flags, int mode)
@@ -110,6 +133,30 @@ static inline int generic_usleep(uint64_t us)
 {
 	return usleep((useconds_t)us);
 }
+
+static inline int generic_stat(const char *fname, platform_stat_t *st)
+{
+	struct stat sb;
+	int res;
+
+	res = stat(fname, &sb);
+	if (res)
+		return res;
+	if (!st)
+		return res;
+
+	st->dev = sb.st_dev;
+	st->rdev = sb.st_rdev;
+	st->ino = sb.st_ino;
+	st->mode = sb.st_mode;
+	st->uid = sb.st_uid;
+	st->gid = sb.st_gid;
+	st->size = sb.st_size;
+	st->blksize = sb.st_blksize;
+	st->blocks = sb.st_blocks;
+
+	return res;
+}
 #endif
 
 static platform_t default_platform = {
@@ -119,6 +166,7 @@ static platform_t default_platform = {
 	.write = win_write,
 	.read = win_read,
 	.usleep = win_usleep,
+	.stat = win_stat,
 	.calloc = calloc,
 	.malloc = malloc,
 	.aligned_alloc = win_aligned_alloc,
@@ -129,6 +177,7 @@ static platform_t default_platform = {
 	.write = generic_write,
 	.read = generic_read,
 	.usleep = generic_usleep,
+	.stat = generic_stat,
 	.calloc = calloc,
 	.malloc = malloc,
 	.aligned_alloc = posix_memalign,

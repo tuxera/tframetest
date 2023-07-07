@@ -36,12 +36,12 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 		test_mode_t mode);
 frame_t *tester_get_frame_read(const platform_t *platform, const char *path);
 
-static inline void result_free(test_result_t *res)
+static inline void result_free(const platform_t *platform, test_result_t *res)
 {
 	if (!res)
 		return;
 	if (res->completion)
-		free(res->completion);
+		platform->free(res->completion);
 	res->completion = NULL;
 }
 

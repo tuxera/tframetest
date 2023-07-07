@@ -3,9 +3,6 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,18 +41,17 @@ frame_t *frame_gen(const platform_t *platform, profile_t profile)
 
 frame_t *frame_from_file(const platform_t *platform, const char *fname)
 {
-	struct stat st;
+	platform_stat_t st;
 	frame_t *res;
 
-	if (stat(fname, &st)) {
+	if (platform->stat(fname, &st))
 		return NULL;
-	}
 
 	res = platform->calloc(1, sizeof(*res));
 	if (!res)
 		return NULL;
 
-	res->size = st.st_size;
+	res->size = st.size;
 	/* Round to direct I/O boundaries */
 	if (res->size & 0xfff) {
 		size_t extra = res->size & 0xfff;
