@@ -35,7 +35,7 @@ static frame_t *gen_default_frame(void)
 	return frame_gen(tester_platform, prof);
 }
 
-static int tester_run_write_read_with_mode(test_mode_t  mode)
+static int tester_run_write_read_with(test_mode_t mode, size_t fps)
 {
 	const size_t frames = 5;
 	test_result_t res;
@@ -50,7 +50,8 @@ static int tester_run_write_read_with_mode(test_mode_t  mode)
 	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_EQ(f, -1);
 
-	res = tester_run_write(tester_platform, ".", frm, 0, frames, 0, mode);
+	res = tester_run_write(tester_platform, ".", frm, 0, frames, fps,
+			mode);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
@@ -66,7 +67,7 @@ static int tester_run_write_read_with_mode(test_mode_t  mode)
 	TEST_ASSERT(frm_res);
 
 	res_read = tester_run_read(tester_platform, ".", frm_res, 0, frames,
-			0, mode);
+			fps, mode);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT(res_read.completion);
@@ -78,17 +79,33 @@ static int tester_run_write_read_with_mode(test_mode_t  mode)
 
 int test_tester_run_write_read(void)
 {
-	return tester_run_write_read_with_mode(TEST_MODE_NORM);
+	return tester_run_write_read_with(TEST_MODE_NORM, 0);
 }
 
 int test_tester_run_write_read_reverse(void)
 {
-	return tester_run_write_read_with_mode(TEST_MODE_REVERSE);
+	return tester_run_write_read_with(TEST_MODE_REVERSE, 0);
 }
 
 int test_tester_run_write_read_random(void)
 {
-	return tester_run_write_read_with_mode(TEST_MODE_RANDOM);
+	return tester_run_write_read_with(TEST_MODE_RANDOM, 0);
+}
+
+int test_tester_run_write_read_fps(void)
+{
+	uint64_t start;
+	uint64_t time;
+	int res;
+
+	start = tester_start();
+	res = tester_run_write_read_with(TEST_MODE_NORM, 40);
+	time = tester_stop(start);
+
+	/* 5 frames, write and read totals 10 frames, 40 fps == 0.25 second */
+	TEST_ASSERT(time >= (SEC_IN_NS / 4));
+
+	return res;
 }
 
 int test_tester_result_aggregate(void)
@@ -133,6 +150,8 @@ int test_tester(void)
 	TEST(tester_run_write_read_random);
 	test_platform_finalize();
 	TEST(tester_result_aggregate);
+	TEST(tester_run_write_read_fps);
+	test_platform_finalize();
 
 	test_platform_finalize();
 

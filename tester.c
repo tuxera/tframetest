@@ -134,8 +134,6 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 	size_t end_frame;
 	size_t *seq = NULL;
 
-	budget = fps ? (SEC_IN_NS / fps) : 0;
-
 	res.completion = platform->calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
 		return res;
@@ -200,8 +198,6 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 	size_t budget;
 	size_t end_frame;
 	size_t *seq = NULL;
-
-	budget = fps ? (SEC_IN_NS / fps) : 0;
 
 	res.completion = platform->calloc(frames, sizeof(*res.completion));
 	if (!res.completion)
