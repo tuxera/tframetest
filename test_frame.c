@@ -32,16 +32,19 @@ int test_frame_gen(void)
 int test_frame_fill(void)
 {
 	frame_t *frm;
+	size_t i;
 
 	frm = gen_default_frame();
 	TEST_ASSERT(frm);
 
 	/* Default fill with 't' */
-	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 't');
+	for (i = 0; i < frm->size; i++)
+		TEST_ASSERT_EQ(((unsigned char*)frm->data)[i], 't');
 
 	/* Test fill works */
 	TEST_ASSERT_EQ(frame_fill(frm, 0x42), frm->size);
-	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 0x42);
+	for (i = 0; i < frm->size; i++)
+		TEST_ASSERT_EQ(((unsigned char*)frm->data)[i], 0x42);
 
 	frame_destroy(frame_platform, frm);
 

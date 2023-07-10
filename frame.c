@@ -5,6 +5,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "frame.h"
 
@@ -91,11 +92,10 @@ void frame_destroy(const platform_t *platform, frame_t *frame)
 
 size_t frame_fill(frame_t *frame, char val)
 {
-	size_t i;
-
-	for (i = 0; i < frame->size; i++)
-		((char*)frame->data)[i] = val;
-	return i;
+	if (!frame->size)
+		return 0;
+	memset(frame->data, val, frame->size);
+	return frame->size;
 }
 
 size_t frame_write(const platform_t *platform, platform_handle_t f,
