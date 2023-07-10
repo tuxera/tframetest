@@ -45,7 +45,8 @@ static inline void result_free(const platform_t *platform, test_result_t *res)
 	res->completion = NULL;
 }
 
-static inline int test_result_aggregate(test_result_t *dst, test_result_t *src)
+static inline int test_result_aggregate(test_result_t *dst,
+		const test_result_t *src)
 {
 	test_completion_t *tmp;
 	size_t frm;

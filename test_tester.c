@@ -55,7 +55,6 @@ int test_tester_run_write_read(void)
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
-	TEST_ASSERT_NE(res.write_time_taken_ns, 0);
 	TEST_ASSERT(res.completion);
 
 	result_free(tester_platform, &res);
@@ -71,10 +70,37 @@ int test_tester_run_write_read(void)
 			0, TEST_MODE_NORM);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
-	TEST_ASSERT_NE(res_read.write_time_taken_ns, 0);
 	TEST_ASSERT(res_read.completion);
 
 	result_free(tester_platform, &res_read);
+
+	return 0;
+}
+
+int test_tester_result_aggregate(void)
+{
+	test_result_t a = {0};
+	test_result_t b = {0};
+	test_result_t c = {0};
+
+	a.frames_written = 100;
+	a.bytes_written = 424242;
+	a.time_taken_ns = 0xfefefefe;
+
+	b.frames_written = 42;
+	b.bytes_written = 111111;
+	b.time_taken_ns = 0x01010101;
+
+	TEST_ASSERT(!test_result_aggregate(&c, &a));
+	TEST_ASSERT_EQ(a.frames_written, 100);
+	TEST_ASSERT_EQ(a.frames_written, c.frames_written);
+	TEST_ASSERT_EQ(a.bytes_written, c.bytes_written);
+	TEST_ASSERT_EQ(a.time_taken_ns, c.time_taken_ns);
+
+	TEST_ASSERT(!test_result_aggregate(&c, &b));
+	TEST_ASSERT_EQ(a.frames_written + b.frames_written, c.frames_written);
+	TEST_ASSERT_EQ(a.bytes_written + b.bytes_written, c.bytes_written);
+	TEST_ASSERT_EQ(a.time_taken_ns + b.time_taken_ns, c.time_taken_ns);
 
 	return 0;
 }
@@ -87,6 +113,7 @@ int test_tester(void)
 
 	TEST(tester_start_stop);
 	TEST(tester_run_write_read);
+	TEST(tester_result_aggregate);
 
 	test_platform_finalize();
 

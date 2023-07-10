@@ -39,11 +39,10 @@ uint64_t tester_stop(uint64_t start)
 }
 
 static inline size_t tester_frame_write(const platform_t *platform,
-		test_result_t *res, const char *path, frame_t *frame,
-		size_t num, test_completion_t *comp)
+		const char *path, frame_t *frame, size_t num,
+		test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
-	uint64_t start;
 	size_t ret;
 	platform_handle_t f;
 
@@ -57,9 +56,7 @@ static inline size_t tester_frame_write(const platform_t *platform,
 		return 0;
 	comp->open = tester_start();
 
-	start = tester_start();
 	ret = frame_write(platform, f, frame);
-	res->write_time_taken_ns += tester_stop(start);
 	comp->io = tester_start();
 
 	platform->close(f);
@@ -72,11 +69,10 @@ static inline size_t tester_frame_write(const platform_t *platform,
 }
 
 static inline size_t tester_frame_read(const platform_t *platform,
-		test_result_t *res, const char *path, frame_t *frame,
-		size_t num, test_completion_t *comp)
+		const char *path, frame_t *frame, size_t num,
+		test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
-	uint64_t start;
 	size_t ret;
 	platform_handle_t f;
 
@@ -89,9 +85,7 @@ static inline size_t tester_frame_read(const platform_t *platform,
 		return 0;
 	comp->open = tester_start();
 
-	start = tester_start();
 	ret = frame_read(platform, f, frame);
-	res->write_time_taken_ns += tester_stop(start);
 	comp->io = tester_start();
 
 	platform->close(f);
@@ -176,7 +170,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_write(platform, &res, path, frame, frame_idx,
+		if (!tester_frame_write(platform, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			break;
 		res.completion[i - start_frame].frame = tester_start();
@@ -243,7 +237,7 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_read(platform, &res, path, frame, frame_idx,
+		if (!tester_frame_read(platform, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			return res;
 		res.completion[i - start_frame].frame = tester_start();
