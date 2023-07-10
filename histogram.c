@@ -1,3 +1,6 @@
+#ifndef assert
+#include <assert.h>
+#endif
 #include <stdio.h>
 #include <stdint.h>
 #include "tester.h"
@@ -44,10 +47,10 @@ static inline size_t time_get_bucket(uint64_t time)
 
 	for (i = 0; i < buckets_cnt; i++) {
 		if (time <= buckets[i])
-			return i - 1;
+			return i > 0 ? i - 1 : i;
 	}
 
-	return buckets_cnt;
+	return buckets_cnt - 1;
 }
 
 static inline size_t time_get_sub_bucket(size_t bucket, uint64_t time)
@@ -63,6 +66,7 @@ static inline size_t time_get_sub_bucket(size_t bucket, uint64_t time)
 
 	if (max - min == 0)
 		return 0;
+	assert(time >= min && time < max);
 	if (time < min)
 		return 0;
 	if (time > max)
@@ -70,20 +74,13 @@ static inline size_t time_get_sub_bucket(size_t bucket, uint64_t time)
 
 	time = time - min;
 
-	return (time * SUB_BUCKET_CNT) / (max - min);
+	return (time * SUB_BUCKET_CNT) / (max - min + 1);
 }
 
-void print_histogram(const test_result_t *res)
+static inline void hist_collect_cnts(const test_result_t *res, uint64_t *cnts)
 {
-	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
-	size_t i, j;
-	uint64_t max;
-	uint64_t sbcnt;
+	size_t i;
 
-	if (!res->completion)
-		return;
-
-	sbcnt = SUB_BUCKET_CNT * buckets_cnt;
 	/*
 	 * Categorize the completion times in buckets and sub buckets.
 	 * Every bucket has SUB_BUCKET_CNT sub buckets, so divide the result
@@ -97,13 +94,41 @@ void print_histogram(const test_result_t *res)
 
 		++cnts[b * SUB_BUCKET_CNT + sb];
 	}
+}
 
-	/* Maximum value for scale */
-	max = 0;
+static inline uint64_t hist_cnts_max(uint64_t *cnts, size_t sbcnt)
+{
+	uint64_t max = 0;
+	size_t i;
+
 	for (i = 0; i < sbcnt; i++) {
 		if (cnts[i] > max)
 			max = cnts[i];
 	}
+
+	return max;
+}
+
+static inline size_t hist_cnts(void)
+{
+	return SUB_BUCKET_CNT * buckets_cnt;
+}
+
+void print_histogram(const test_result_t *res)
+{
+	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
+	uint64_t max;
+	size_t i, j;
+	size_t sbcnt;
+
+	if (!res->completion)
+		return;
+
+	sbcnt = hist_cnts();
+	hist_collect_cnts(res, cnts);
+
+	/* Resolve the maximum value for scale */
+	max = hist_cnts_max(cnts, sbcnt);
 
 	printf("\nCompletion times:\n");
 	for (j = 0; j < HISTOGRAM_HEIGHT; j++) {

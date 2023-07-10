@@ -17,7 +17,7 @@ libtframetest.a: profile.o frame.o tester.o histogram.o report.o platform.o
 test: unittest
 	./unittest
 
-unittest: unittest.o test_frame.o test_profile.o test_tester.o test_platform.o libtframetest.a
+unittest: unittest.o test_frame.o test_profile.o test_tester.o test_platform.o test_histogram.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 coverage:
@@ -29,6 +29,5 @@ coverage:
 
 clean:
 	rm -f *.o tframetest tframetest.exe libtframetest.a unittest *.gcno *.gcda *.gcov
-
 
 .PHONY: all clean

@@ -39,12 +39,12 @@ int test_frame_fill(void)
 
 	/* Default fill with 't' */
 	for (i = 0; i < frm->size; i++)
-		TEST_ASSERT_EQ(((unsigned char*)frm->data)[i], 't');
+		TEST_ASSERT_EQI(i, ((unsigned char*)frm->data)[i], 't');
 
 	/* Test fill works */
 	TEST_ASSERT_EQ(frame_fill(frm, 0x42), frm->size);
 	for (i = 0; i < frm->size; i++)
-		TEST_ASSERT_EQ(((unsigned char*)frm->data)[i], 0x42);
+		TEST_ASSERT_EQI(i, ((unsigned char*)frm->data)[i], 0x42);
 
 	frame_destroy(frame_platform, frm);
 

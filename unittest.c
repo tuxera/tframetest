@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include "unittest.h"
+
+INIT_ASSERT()
 
 #define RUN_TEST(NAME)\
 	extern int test_ ## NAME (void);\
@@ -13,6 +16,7 @@ int main(int argc, char **argv)
 	RUN_TEST(frame);
 	RUN_TEST(profile);
 	RUN_TEST(tester);
+	RUN_TEST(histogram);
 
 	printf("Done.\n");
 	return 0;

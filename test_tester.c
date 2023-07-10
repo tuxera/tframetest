@@ -151,7 +151,6 @@ int test_tester(void)
 	test_platform_finalize();
 	TEST(tester_result_aggregate);
 	TEST(tester_run_write_read_fps);
-	test_platform_finalize();
 
 	test_platform_finalize();
 
