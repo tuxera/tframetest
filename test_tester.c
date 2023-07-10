@@ -35,7 +35,7 @@ static frame_t *gen_default_frame(void)
 	return frame_gen(tester_platform, prof);
 }
 
-int test_tester_run_write_read(void)
+static int tester_run_write_read_with_mode(test_mode_t  mode)
 {
 	const size_t frames = 5;
 	test_result_t res;
@@ -50,8 +50,7 @@ int test_tester_run_write_read(void)
 	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_EQ(f, -1);
 
-	res = tester_run_write(tester_platform, ".", frm, 0, frames, 0,
-			TEST_MODE_NORM);
+	res = tester_run_write(tester_platform, ".", frm, 0, frames, 0, mode);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
@@ -67,7 +66,7 @@ int test_tester_run_write_read(void)
 	TEST_ASSERT(frm_res);
 
 	res_read = tester_run_read(tester_platform, ".", frm_res, 0, frames,
-			0, TEST_MODE_NORM);
+			0, mode);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT(res_read.completion);
@@ -75,6 +74,21 @@ int test_tester_run_write_read(void)
 	result_free(tester_platform, &res_read);
 
 	return 0;
+}
+
+int test_tester_run_write_read(void)
+{
+	return tester_run_write_read_with_mode(TEST_MODE_NORM);
+}
+
+int test_tester_run_write_read_reverse(void)
+{
+	return tester_run_write_read_with_mode(TEST_MODE_REVERSE);
+}
+
+int test_tester_run_write_read_random(void)
+{
+	return tester_run_write_read_with_mode(TEST_MODE_RANDOM);
 }
 
 int test_tester_result_aggregate(void)
@@ -113,6 +127,11 @@ int test_tester(void)
 
 	TEST(tester_start_stop);
 	TEST(tester_run_write_read);
+	test_platform_finalize();
+	TEST(tester_run_write_read_reverse);
+	test_platform_finalize();
+	TEST(tester_run_write_read_random);
+	test_platform_finalize();
 	TEST(tester_result_aggregate);
 
 	test_platform_finalize();

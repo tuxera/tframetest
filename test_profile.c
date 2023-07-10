@@ -49,6 +49,9 @@ int test_profile_get_by_type(void)
 {
 	profile_t prof;
 
+	prof = profile_get_by_type(PROF_INVALID);
+	TEST_ASSERT_EQ(prof.prof, PROF_INVALID);
+
 	prof = profile_get_by_type(PROF_4K);
 	TEST_ASSERT_EQ(prof.prof, PROF_4K);
 	TEST_ASSERT_NE(prof.width, 0);
