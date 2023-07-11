@@ -48,6 +48,7 @@ int test_profile_get_by_name(void)
 int test_profile_get_by_type(void)
 {
 	profile_t prof;
+	profile_t prof2;
 
 	prof = profile_get_by_type(PROF_INVALID);
 	TEST_ASSERT_EQ(prof.prof, PROF_INVALID);
@@ -58,11 +59,15 @@ int test_profile_get_by_type(void)
 	TEST_ASSERT_NE(prof.height, 0);
 	TEST_ASSERT_NE(prof.bytes_per_pixel, 0);
 
-	prof = profile_get_by_type(PROF_SD);
-	TEST_ASSERT_EQ(prof.prof, PROF_SD);
-	TEST_ASSERT_NE(prof.width, 0);
-	TEST_ASSERT_NE(prof.height, 0);
-	TEST_ASSERT_NE(prof.bytes_per_pixel, 0);
+	prof2 = profile_get_by_type(PROF_SD);
+	TEST_ASSERT_EQ(prof2.prof, PROF_SD);
+	TEST_ASSERT_NE(prof2.width, 0);
+	TEST_ASSERT_NE(prof2.height, 0);
+	TEST_ASSERT_NE(prof2.bytes_per_pixel, 0);
+
+	/* 4k profile should be bigger than SD */
+	TEST_ASSERT(prof.width > prof2.width);
+	TEST_ASSERT(prof.height > prof2.height);
 
 	return 0;
 }
