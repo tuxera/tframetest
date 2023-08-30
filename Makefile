@@ -1,4 +1,7 @@
-CFLAGS+=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors
+MAJOR=3023
+MINOR=8
+PATCH=1
+CFLAGS+=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors -DMAJOR=$(MAJOR) -DMINOR=$(MINOR) -DPATCH=$(PATCH)
 LDFLAGS+=-pthread
 HEADERS := $(wildcard *.h)
 DATE=$(shell date +%Y%m%d-%H%M%S)
@@ -22,6 +25,12 @@ test: unittest
 
 unittest: unittest.o test_frame.o test_profile.o test_tester.o test_platform.o test_histogram.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+dist:
+	git archive --prefix="tframetest-$(MAJOR).$(MINOR).$(PATCH)/" HEAD | gzip -9 > "tframetest-$(MAJOR).$(MINOR).$(PATCH).tar.gz"
+
+win:
+	./build_win.sh "$(MAJOR).$(MINOR).$(PATCH)"
 
 coverage:
 	CFLAGS="-O0 -fprofile-arcs -ftest-coverage" LDFLAGS="-lgcov" make -C . clean test

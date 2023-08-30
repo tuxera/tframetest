@@ -2,6 +2,7 @@
 
 set -eu
 
+VERSION=${1:-$(date +%Y%m%d-%H%M%S)}
 CROSS="${CROSS:-i686-w64-mingw32-}"
 SRC_D="${CROSS}"
 if [ "${SRC_D: -1}" == "-" ]; then
@@ -23,7 +24,7 @@ echo "Compiler ${CC}"
 make clean all
 
 # Package to zip file
-DST="tframetest-win-${CROSS}$(date +%Y%m%d-%H%M%S)"
+DST="tframetest-win-${CROSS}${VERSION}"
 cleanup() {
 	if [ "${DST}" != "" ] && [ -d "${DST}" ]; then
 		rm -rf "${DST:?}"

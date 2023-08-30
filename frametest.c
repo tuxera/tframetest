@@ -375,6 +375,7 @@ static struct option long_opts[] = {
 	{ "times", no_argument, 0, 0 },
 	{ "frametimes", no_argument, 0, 0 },
 	{ "histogram", no_argument, 0, 0 },
+	{ "version", no_argument, 0, 'V' },
 	{ "help", no_argument, 0, 'h' },
 	{ 0, 0, 0, 0 },
 };
@@ -395,15 +396,26 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "times", "Show breakdown of completion times (open/io/close)" },
 	{ "frametimes", "Show detailed timings of every frames in CSV format" },
 	{ "histogram", "Show histogram of completion times at the end" },
+	{ "version", "Display version information"},
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
+
+#define XSTRING(x) #x
+#define VERSION_STRING(a,b,c) XSTRING(a) "." XSTRING(b) "." XSTRING(c)
+void version(void)
+{
+	fprintf(stderr, "tframetest %s\n", VERSION_STRING(MAJOR, MINOR, PATCH));
+}
+#undef XSTRING
+#undef VERSION_STRING
 
 #define DESC_POS 30
 void usage(const char *name)
 {
 	size_t i;
 
+	version();
 	fprintf(stderr, "Usage: %s [options] path\n", name);
 	fprintf(stderr, "Options:\n");
 	for (i = 0; i < long_opts_cnt; i++) {
@@ -427,6 +439,7 @@ void usage(const char *name)
 				long_opt_descs[i].desc);
 	}
 }
+#undef DESC_POS
 
 int main(int argc, char **argv)
 {
@@ -440,7 +453,7 @@ int main(int argc, char **argv)
 	opts.header_size = 65536;
 	while (1) {
 
-		c = getopt_long(argc, argv, "rw:elt:n:f:vmhc",
+		c = getopt_long(argc, argv, "rw:elt:n:f:vmhVc",
 				long_opts, &opt_index);
 		if (c == -1)
 			break;
@@ -501,6 +514,9 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			list_profiles();
+			return 0;
+		case 'V':
+			version();
 			return 0;
 		default:
 			printf("Invalid option: %c\n", c);
