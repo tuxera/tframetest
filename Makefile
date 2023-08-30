@@ -32,6 +32,9 @@ dist:
 win:
 	./build_win.sh "$(MAJOR).$(MINOR).$(PATCH)"
 
+win64:
+	CROSS=x86_64-w64-mingw32- ./build_win.sh "$(MAJOR).$(MINOR).$(PATCH)"
+
 coverage:
 	CFLAGS="-O0 -fprofile-arcs -ftest-coverage" LDFLAGS="-lgcov" make -C . clean test
 	find -name "*.gcda" | while read f; do bn=$$(basename "$$f" .gcda); gcov "$$bn.c"; done;

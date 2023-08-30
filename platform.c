@@ -95,7 +95,7 @@ static inline platform_handle_t win_open(const char *fname,
 			NULL);
 	if (h == INVALID_HANDLE_VALUE)
 		return -1;
-	return _open_osfhandle((long)h, 0);
+	return _open_osfhandle((size_t)h, 0);
 }
 
 static inline int win_close(platform_handle_t handle)
