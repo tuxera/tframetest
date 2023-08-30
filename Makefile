@@ -5,6 +5,9 @@ DATE=$(shell date +%Y%m%d-%H%M%S)
 
 all: tframetest
 
+release: tframetest
+	strip tframetest
+
 tframetest: frametest.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 

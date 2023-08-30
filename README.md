@@ -2,9 +2,13 @@
 
 Tool to test and benchmark writing/reading media frames to/from a disk.
 
-This tool is planned to about the same as closed source binary too `frametest`
-found on various places from the net, for example from here:
-[https://support.dvsus.com/hc/en-us/articles/212925466-How-to-use-frametest](https://support.dvsus.com/hc/en-us/articles/212925466-How-to-use-frametest)
+This tool is planned to do about the same as closed source binary tool
+`frametest` found on various places from the net, for example from here:
+[https://support.dvsus.com/hc/en-us/articles/212925466-How-to-use-frametest](https://support.dvsus.com/hc/en-us/articles/212925466-How-to-use-frametest).
+
+We aim that tframetest would be almost drop-in replacement for
+the original tool, but there are some differences for example in the supported
+options, functionality, way of working, and in the output.
 
 
 ## Compiling
@@ -13,7 +17,7 @@ To compile for Linux install a C compiler and issue:
 
 	make
 
-It should build `tframetest` binary.
+This should build `tframetest` binary.
 
 To build for FreeBSD you need to use `gmake` instead since the Makefile is not
 compatible with FreeBSD `make`.
@@ -22,7 +26,7 @@ To build Windows binary there's script `build_win.sh`.
 One can cross-compile the tool in a Linux system.
 We have tested `i686-w64-mingw32-gcc` and `x86_64-w64-mingw32-gcc` available
 in Ubuntu/Debian repository as `mingw-w64`.
-The default build for Windows is 32-bit but 64-bit build is possible:
+The default build for Windows is 32-bit but 64-bit build is possible as well:
 
 	sudo apt install mingw-w64 zip
 	./build_win.sh
@@ -30,7 +34,7 @@ The default build for Windows is 32-bit but 64-bit build is possible:
 
 ## Usage
 
-The basic usage is to first write some frames, and then to read them.
+The basic usage is to write first some frames, and then to read them.
 Most used options are: frame size, number of frames, and number of threads.
 To write 1000 of 2k sized frames with 4 threads do:
 
@@ -44,3 +48,9 @@ To perform read test for those freshly written frames:
 There's more options available, please see the help for more info:
 
 	./tframetest --help
+
+## License
+
+This program is distributed under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version. See the included file [COPYING](COPYING).
