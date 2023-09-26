@@ -4,21 +4,22 @@
 #include <unistd.h>
 #include "unittest.h"
 #include "tester.h"
+#include "timing.h"
 
 #define SLEEP_TIME 1000UL
 
 static const platform_t *tester_platform = NULL;
 
-int test_tester_start_stop(void)
+int test_timing_start_elapsed(void)
 {
 	uint64_t start;
 	uint64_t time;
 	uint64_t end;
 
-	start = tester_start();
+	start = timing_start();
 	usleep(SLEEP_TIME);
-	time = tester_stop(start);
-	end = tester_start();
+	time = timing_elapsed(start);
+	end = timing_start();
 
 	TEST_ASSERT(end > start);
 	TEST_ASSERT(time != 0);
@@ -98,9 +99,9 @@ int test_tester_run_write_read_fps(void)
 	uint64_t time;
 	int res;
 
-	start = tester_start();
+	start = timing_start();
 	res = tester_run_write_read_with(TEST_MODE_NORM, 40);
-	time = tester_stop(start);
+	time = timing_elapsed(start);
 
 	/* 5 frames, write and read totals 10 frames, 40 fps == 0.25 second */
 	TEST_ASSERT(time >= (SEC_IN_NS / 4));
@@ -142,7 +143,7 @@ int test_tester(void)
 
 	tester_platform = test_platform_get();
 
-	TEST(tester_start_stop);
+	TEST(timing_start_elapsed);
 	TEST(tester_run_write_read);
 	test_platform_finalize();
 	TEST(tester_run_write_read_reverse);

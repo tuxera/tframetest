@@ -135,7 +135,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 
 	calculate_frame_range(threads, opts);
 
-	start = tester_start();
+	start = timing_start();
 	for (i = 0; i < opts->threads; i++) {
 		int res;
 
@@ -173,7 +173,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 		    res = 1;
 		result_free(platform, &threads[i].res);
 	}
-	tres.time_taken_ns = tester_stop(start);
+	tres.time_taken_ns = timing_elapsed(start);
 	if (!res) {
 		if (opts->csv)
 			print_results_csv(tst, opts, &tres);

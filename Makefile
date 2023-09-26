@@ -14,7 +14,7 @@ release: tframetest
 tframetest: frametest.o libtframetest.a
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-libtframetest.a: profile.o frame.o tester.o histogram.o report.o platform.o
+libtframetest.a: profile.o frame.o tester.o histogram.o report.o platform.o timing.o
 	$(AR) $(ARFLAGS) $@ $^
 
 %.o: %.c $(HEADERS)

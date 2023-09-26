@@ -25,38 +25,12 @@
 #define _XOPEN_SOURCE 500
 #endif
 #endif
-
 #include <limits.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "tester.h"
+#include "timing.h"
 
-static inline uint64_t tester_time(void)
-{
-	struct timespec ts;
-	uint64_t res;
-
-	if (clock_gettime(CLOCK_MONOTONIC, &ts)) {
-		if (clock_gettime(CLOCK_REALTIME, &ts)) {
-			return 0;
-		}
-	}
-	res = (uint64_t)ts.tv_sec * SEC_IN_NS;
-	res += ts.tv_nsec;
-
-	return res;
-}
-
-uint64_t tester_start(void)
-{
-	return tester_time();
-}
-
-uint64_t tester_stop(uint64_t start)
-{
-	return tester_time() - start;
-}
 
 static inline size_t tester_frame_write(const platform_t *platform,
 		const char *path, frame_t *frame, size_t num,
@@ -74,13 +48,13 @@ static inline size_t tester_frame_write(const platform_t *platform,
 			| PLATFORM_OPEN_DIRECT, 0666);
 	if (f <= 0)
 		return 0;
-	comp->open = tester_start();
+	comp->open = timing_start();
 
 	ret = frame_write(platform, f, frame);
-	comp->io = tester_start();
+	comp->io = timing_start();
 
 	platform->close(f);
-	comp->close = tester_start();
+	comp->close = timing_start();
 
 	/* Faking the output! */
 	if (!ret && !frame->size)
@@ -103,13 +77,13 @@ static inline size_t tester_frame_read(const platform_t *platform,
 			| PLATFORM_OPEN_DIRECT, 0666);
 	if (f <= 0)
 		return 0;
-	comp->open = tester_start();
+	comp->open = timing_start();
 
 	ret = frame_read(platform, f, frame);
-	comp->io = tester_start();
+	comp->io = timing_start();
 
 	platform->close(f);
-	comp->close = tester_start();
+	comp->close = timing_start();
 
 	/* Faking the output! */
 	if (!ret && !frame->size)
@@ -172,7 +146,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 	}
 
 	for (i = start_frame; i < end_frame; i++) {
-		uint64_t frame_start = tester_start();
+		uint64_t frame_start = timing_start();
 		size_t frame_idx;
 
 		res.completion[i - start_frame].start = frame_start;
@@ -191,16 +165,16 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 		if (!tester_frame_write(platform, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			break;
-		res.completion[i - start_frame].frame = tester_start();
+		res.completion[i - start_frame].frame = timing_start();
 		++res.frames_written;
 		res.bytes_written += frame->size;
 		/* If fps limit is enabled loop until frame budget is gone */
 		if (fps && budget) {
-			uint64_t frame_elapsed = tester_stop(frame_start);
+			uint64_t frame_elapsed = timing_elapsed(frame_start);
 
 			while (frame_elapsed < budget) {
 				platform->usleep(100);
-				frame_elapsed = tester_stop(frame_start);
+				frame_elapsed = timing_elapsed(frame_start);
 			}
 		}
 	}
@@ -237,7 +211,7 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 	}
 
 	for (i = start_frame; i < start_frame + frames; i++) {
-		uint64_t frame_start = tester_start();
+		uint64_t frame_start = timing_start();
 		size_t frame_idx;
 
 		res.completion[i - start_frame].start = frame_start;
@@ -256,16 +230,16 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 		if (!tester_frame_read(platform, path, frame, frame_idx,
 				&res.completion[i - start_frame]))
 			return res;
-		res.completion[i - start_frame].frame = tester_start();
+		res.completion[i - start_frame].frame = timing_start();
 		++res.frames_written;
 		res.bytes_written += frame->size;
 		/* If fps limit is enabled loop until frame budget is gone */
 		if (fps && budget) {
-			uint64_t frame_elapsed = tester_stop(frame_start);
+			uint64_t frame_elapsed = timing_elapsed(frame_start);
 
 			while (frame_elapsed < budget) {
 				platform->usleep(100);
-				frame_elapsed = tester_stop(frame_start);
+				frame_elapsed = timing_elapsed(frame_start);
 			}
 		}
 	}
