@@ -17,7 +17,7 @@ To compile for Linux install a C compiler and issue:
 
 	make
 
-This should build `tframetest` binary.
+This should build `tframetest` binary into `build` folder.
 
 To build for FreeBSD you need to use `gmake` instead since the Makefile is not
 compatible with FreeBSD `make`.
@@ -39,15 +39,15 @@ Most used options are: frame size, number of frames, and number of threads.
 To write 1000 of 2k sized frames with 4 threads do:
 
 	mkdir tst
-	./tframetest -w 2k -n 1000 -t 4 tst
+	build/tframetest -w 2k -n 1000 -t 4 tst
 
 To perform read test for those freshly written frames:
 
-	./tframetest -r -n 1000 -t 4 tst
+	build/tframetest -r -n 1000 -t 4 tst
 
 There's more options available, please see the help for more info:
 
-	./tframetest --help
+	build/tframetest --help
 
 ## License
 

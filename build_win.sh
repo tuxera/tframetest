@@ -5,6 +5,7 @@ set -eu
 VERSION=${1:-$(date +%Y%m%d-%H%M%S)}
 CROSS="${CROSS:-i686-w64-mingw32-}"
 SRC_D="${CROSS}"
+BUILD_FOLDER=${BUILD_FOLDER:-$(pwd)/build}
 if [ "${SRC_D: -1}" == "-" ]; then
 	SRC_D="${SRC_D::-1}"
 fi
@@ -21,7 +22,7 @@ if ! "${CC}" -v > /dev/null 2>&1 ; then
 fi
 echo "Compiler ${CC}"
 
-make clean all
+make clean all BUILD_FOLDER="${BUILD_FOLDER}"
 
 # Package to zip file
 DST="tframetest-win-${CROSS}${VERSION}"
@@ -33,7 +34,7 @@ cleanup() {
 
 trap cleanup EXIT
 mkdir -p "${DST}"
-cp tframetest.exe "${DST}/"
+cp "${BUILD_FOLDER}/tframetest.exe" "${DST}/"
 "${STRIP}" "${DST}/tframetest.exe"
 
 for lib in "${LIBS[@]}"; do
