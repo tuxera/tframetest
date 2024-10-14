@@ -20,7 +20,6 @@
 
 #include "unittest.h"
 #include "histogram.h"
-/* We want to test static functions from there */
 #include "histogram.c"
 
 int test_histogram_time_bucket(void)
@@ -62,7 +61,7 @@ int test_histogram_time_sub_bucket(void)
 	size_t bucket;
 	size_t assertcnt;
 
-	assertcnt = unittest_asserts;
+	EXPECT_ASSERTS(0);
 	bucket = time_get_sub_bucket(0, 1);
 	TEST_ASSERT_EQ(bucket, 0);
 
@@ -78,20 +77,15 @@ int test_histogram_time_sub_bucket(void)
 	bucket = time_get_sub_bucket(0, 199999);
 	TEST_ASSERT_EQ(bucket, 4);
 
-	TEST_ASSERT_EQ(assertcnt, unittest_asserts);
-
 	/* This should cause and error */
-	assertcnt = unittest_asserts;
+	EXPECT_ASSERTS(1);
 	bucket = time_get_sub_bucket(0, 2000000);
-	TEST_ASSERT(assertcnt < unittest_asserts);
-	TEST_ASSERT_EQ(assertcnt + 1, unittest_asserts);
 	/* Fallback is the last sub bucket */
 	TEST_ASSERT_EQ(bucket, 4);
 
-	assertcnt = unittest_asserts;
+	//assertcnt = unittest_asserts;
+	EXPECT_ASSERTS(1);
 	bucket = time_get_sub_bucket(1, 0);
-	TEST_ASSERT(assertcnt < unittest_asserts);
-	TEST_ASSERT_EQ(assertcnt + 1, unittest_asserts);
 	/* Fallback is the first sub bucket */
 	TEST_ASSERT_EQ(bucket, 0);
 
@@ -181,3 +175,5 @@ int test_histogram(void)
 
 	TEST_END();
 }
+
+TEST_MAIN(histogram)

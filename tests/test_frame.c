@@ -18,6 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "frame.c"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <stdlib.h>
@@ -28,6 +29,31 @@
 #include "frame.h"
 
 static const platform_t *frame_platform = NULL;
+
+static profile_t default_test_profile = { "SD-32bit-cmp", PROF_SD, 720, 480, 4, 0 };
+
+profile_t profile_get_by_name(const char *name)
+{
+	(void)name;
+	return default_test_profile;
+}
+
+profile_t profile_get_by_type(enum ProfileType prof)
+{
+	(void)prof;
+	return default_test_profile;
+}
+
+profile_t profile_get_by_index(size_t idx)
+{
+	(void)idx;
+	return default_test_profile;
+}
+
+size_t profile_count(void)
+{
+	return 1;
+}
 
 static frame_t *gen_default_frame(void)
 {
@@ -125,3 +151,5 @@ int test_frame(void)
 
 	TEST_END();
 }
+
+TEST_MAIN(frame)

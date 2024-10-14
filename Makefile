@@ -20,11 +20,8 @@ libtframetest.a: profile.o frame.o tester.o histogram.o report.o platform.o timi
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-test: unittest
-	./unittest
-
-unittest: unittest.o test_frame.o test_profile.o test_tester.o test_platform.o test_histogram.o libtframetest.a
-	$(CC) -o $@ $^ $(LDFLAGS)
+test:
+	make -C tests
 
 dist:
 	git archive --prefix="tframetest-$(MAJOR).$(MINOR).$(PATCH)/" HEAD | gzip -9 > "tframetest-$(MAJOR).$(MINOR).$(PATCH).tar.gz"
@@ -36,13 +33,10 @@ win64:
 	CROSS=x86_64-w64-mingw32- ./build_win.sh "$(MAJOR).$(MINOR).$(PATCH)"
 
 coverage:
-	CFLAGS="-O0 -fprofile-arcs -ftest-coverage" LDFLAGS="-lgcov" make -C . clean test
-	find -name "*.gcda" | while read f; do bn=$$(basename "$$f" .gcda); gcov "$$bn.c"; done;
-	mkdir -p "coverage-$(DATE)"
-	gcovr --html-details "coverage-$(DATE)/coverage.html"
-	zip -r "coverage-$(DATE).zip" "coverage-$(DATE)"
+	make -C tests coverage
 
 clean:
-	rm -f *.o tframetest tframetest.exe libtframetest.a unittest *.gcno *.gcda *.gcov
+	make -C tests clean
+	rm -f *.o tframetest tframetest.exe libtframetest.a *.gcno *.gcda *.gcov
 
-.PHONY: all clean
+.PHONY: all clean release test dist win win64 coverage

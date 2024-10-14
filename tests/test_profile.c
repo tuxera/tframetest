@@ -18,6 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include "profile.c"
 #include <stdio.h>
 #include <string.h>
 #include "profile.h"
@@ -123,3 +124,5 @@ int test_profile(void)
 
 	TEST_END();
 }
+
+TEST_MAIN(profile)

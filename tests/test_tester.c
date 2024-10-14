@@ -1,4 +1,4 @@
-#define _XOPEN_SOURCE 500
+#include "tester.c"
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -9,6 +9,57 @@
 #define SLEEP_TIME 1000UL
 
 static const platform_t *tester_platform = NULL;
+
+size_t frame_write(const platform_t *platform, platform_handle_t f,
+		frame_t *frame)
+{
+	(void)platform;
+	(void)f;
+	(void)frame;
+	return sizeof(*frame);
+}
+
+size_t frame_read(const platform_t *platform, platform_handle_t f,
+		frame_t *frame)
+{
+	(void)platform;
+	(void)f;
+	(void)frame;
+	return sizeof(*frame);
+}
+
+frame_t *frame_from_file(const platform_t *platform, const char *fname)
+{
+	(void)platform;
+	(void)fname;
+	return (frame_t*)calloc(1, sizeof(frame_t));
+}
+
+frame_t *frame_gen(const platform_t *platform, profile_t profile)
+{
+	(void)platform;
+	(void)profile;
+	return (frame_t*)calloc(1, sizeof(frame_t));
+}
+
+profile_t profile_get_by_index(size_t idx)
+{
+	profile_t p = { "SD-32bit-cmp", PROF_SD, 720, 480, 4, 0 };
+	(void)idx;
+	return p;
+}
+
+static uint64_t monotonic_fake_time = 0;
+uint64_t timing_time(void)
+{
+	return ++monotonic_fake_time;
+}
+
+int usleep(useconds_t usec)
+{
+	monotonic_fake_time += usec;
+	return 0;
+}
 
 int test_timing_start_elapsed(void)
 {
@@ -157,3 +208,5 @@ int test_tester(void)
 
 	TEST_END();
 }
+
+TEST_MAIN(tester)

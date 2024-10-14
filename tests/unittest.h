@@ -23,9 +23,11 @@
 
 extern unsigned long unittest_asserts;
 #define assert(X) if (!(X)) {\
-		printf("ASSERT: %s @%s:%u\n", #X, __FILE__, __LINE__);\
-		++unittest_asserts; }
+		if (!unittest_asserts)\
+		printf("ASSERT: %sx @%s:%u\n", #X, __FILE__, __LINE__);\
+		--unittest_asserts; }
 #define INIT_ASSERT() unsigned long unittest_asserts = 0;
+#define EXPECT_ASSERTS(X) unittest_asserts = (X);
 
 #include "platform.h"
 
@@ -51,5 +53,19 @@ extern unsigned long unittest_asserts;
 
 const platform_t * test_platform_get(void);
 void test_platform_finalize(void);
+
+#define RUN_TEST(NAME)\
+	extern int test_ ## NAME (void);\
+	printf("Testing %s...\n", #NAME);\
+	if (test_ ## NAME ()) { return 1;}
+
+#define TEST_MAIN(NAME) \
+INIT_ASSERT()\
+int main(int argc, char **argv)\
+{\
+	(void)argc;\
+	(void)argv;\
+	RUN_TEST(NAME);\
+}
 
 #endif
