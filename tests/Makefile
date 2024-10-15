@@ -4,6 +4,7 @@ BUILD_FOLDER:=$(PWD)/build/tests
 TEST_BINS=$(addprefix $(BUILD_FOLDER)/test_,$(TESTS))
 OBJECTS=$(addsuffix .o,$(TEST_BINS))
 DATE=$(shell date +%Y%m%d-%H%M%S)
+LDFLAGS+=-Wl,--wrap=printf -Wl,--wrap=puts -Wl,--wrap=putchar
 
 all: test
 

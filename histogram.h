@@ -26,4 +26,3 @@
 extern void print_histogram(const test_result_t *res);
 
 #endif
-

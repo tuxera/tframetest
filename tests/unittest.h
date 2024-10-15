@@ -56,6 +56,7 @@ extern unsigned long unittest_asserts;
 
 const platform_t * test_platform_get(void);
 void test_platform_finalize(void);
+void test_ignore_printf(int val);
 
 #define RUN_TEST(NAME)\
 	extern int test_ ## NAME (void);\

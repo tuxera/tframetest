@@ -23,6 +23,7 @@
 #else
 #define _XOPEN_SOURCE 500
 #endif
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -233,3 +234,37 @@ void test_platform_finalize(void)
 		file_cnt = 0;
 	}
 }
+
+static int ignore_printf = 0;
+
+void test_ignore_printf(int val)
+{
+	ignore_printf = val;
+}
+
+int __real_puts(const char *s);
+int __wrap_puts(const char *s)
+{
+	if (ignore_printf)
+		return 0;
+	return __real_puts(s);
+}
+
+int __real_putchar(int c);
+int __wrap_putchar(int c)
+{
+	if (ignore_printf)
+		return 0;
+	return __real_putchar(c);
+}
+
+int __wrap_printf(const char *fmt, ...)
+{
+	va_list ap;
+
+	if (ignore_printf)
+		return 0;
+	va_start(ap, fmt);
+	return vprintf(fmt, ap);
+}
+

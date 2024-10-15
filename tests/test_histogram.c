@@ -163,6 +163,31 @@ int test_histogram_cnts_max()
 	return 0;
 }
 
+int test_histogram_print()
+{
+	test_completion_t compl = {
+		.start = 1,
+		.open = 10,
+		.io = 20,
+		.close = 30,
+		.frame = 1,
+	};
+	test_result_t res = {
+		.frames_written = 1,
+	};
+
+	test_ignore_printf(1);
+
+	print_histogram(&res);
+
+	res.completion = &compl;
+	print_histogram(&res);
+
+	test_ignore_printf(0);
+
+	return 0;
+}
+
 int test_histogram(void)
 {
 	TEST_INIT();
@@ -171,6 +196,7 @@ int test_histogram(void)
 	TEST(histogram_time_sub_bucket);
 	TEST(histogram_collect_cnts);
 	TEST(histogram_cnts_max);
+	TEST(histogram_print);
 
 	TEST_END();
 }
