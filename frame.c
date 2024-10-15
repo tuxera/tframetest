@@ -88,7 +88,8 @@ frame_t *frame_from_file(const platform_t *platform, const char *fname)
 		res->profile.height = 1;
 		res->profile.header_size = 0;
 
-		if (platform->aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
+		if (platform->aligned_alloc(&res->data, ALIGN_SIZE,
+					    res->size)) {
 			platform->free(res);
 			return NULL;
 		}
@@ -119,7 +120,7 @@ size_t frame_fill(frame_t *frame, char val)
 }
 
 size_t frame_write(const platform_t *platform, platform_handle_t f,
-		frame_t *frame)
+		   frame_t *frame)
 {
 	if (!f || !frame)
 		return 0;
@@ -135,7 +136,7 @@ size_t frame_write(const platform_t *platform, platform_handle_t f,
 }
 
 size_t frame_read(const platform_t *platform, platform_handle_t f,
-		frame_t *frame)
+		  frame_t *frame)
 {
 	size_t res = 0;
 
@@ -146,8 +147,8 @@ size_t frame_read(const platform_t *platform, platform_handle_t f,
 	while (res < frame->size) {
 		size_t readcnt;
 
-		readcnt = platform->read(f, (char*)frame->data + res,
-				frame->size - res);
+		readcnt = platform->read(f, (char *)frame->data + res,
+					 frame->size - res);
 		if (readcnt == 0)
 			break;
 		res += readcnt;

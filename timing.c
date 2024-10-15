@@ -30,7 +30,6 @@
 #include "frametest.h"
 #include "timing.h"
 
-
 uint64_t timing_time(void)
 {
 	struct timespec ts;
@@ -46,4 +45,3 @@ uint64_t timing_time(void)
 
 	return res;
 }
-

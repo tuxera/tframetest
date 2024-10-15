@@ -31,7 +31,7 @@ enum CompletionStat {
 };
 
 static void print_stat_about(const test_result_t *res, const char *label,
-		enum CompletionStat stat, int csv)
+			     enum CompletionStat stat, int csv)
 {
 	uint64_t min = SIZE_MAX;
 	uint64_t max = 0;
@@ -74,8 +74,8 @@ static void print_stat_about(const test_result_t *res, const char *label,
 	} else {
 		printf("%s:\n", label);
 		printf(" min   : %lf ms\n", (double)min / SEC_IN_MS);
-		printf(" avg   : %lf ms\n", (double)total / res->frames_written
-				/ SEC_IN_MS);
+		printf(" avg   : %lf ms\n",
+		       (double)total / res->frames_written / SEC_IN_MS);
 		printf(" max   : %lf ms\n", (double)max / SEC_IN_MS);
 	}
 }
@@ -114,19 +114,15 @@ static void print_frame_times(const test_result_t *res, const opts_t *opts)
 	printf("frame,start,open,io,close,frame\n");
 	for (i = 0; i < res->frames_written; i++) {
 		printf("%zu,%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64
-				",%" PRIu64 "\n",
-				i,
-				res->completion[i].start,
-				res->completion[i].open,
-				res->completion[i].io,
-				res->completion[i].close,
-				res->completion[i].frame
-				);
+		       ",%" PRIu64 "\n",
+		       i, res->completion[i].start, res->completion[i].open,
+		       res->completion[i].io, res->completion[i].close,
+		       res->completion[i].frame);
 	}
 }
 
 void print_results(const char *tcase, const opts_t *opts,
-		const test_result_t *res)
+		   const test_result_t *res)
 {
 	if (!res)
 		return;
@@ -137,13 +133,12 @@ void print_results(const char *tcase, const opts_t *opts,
 	printf(" frames: %" PRIu64 "\n", res->frames_written);
 	printf(" bytes : %" PRIu64 "\n", res->bytes_written);
 	printf(" time  : %" PRIu64 "\n", res->time_taken_ns);
-	printf(" fps   : %lf\n", (double)res->frames_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf(" B/s   : %lf\n", (double)res->bytes_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf(" MiB/s : %lf\n", (double)res->bytes_written * SEC_IN_NS
-			/ (1024 * 1024)
-			/ res->time_taken_ns);
+	printf(" fps   : %lf\n",
+	       (double)res->frames_written * SEC_IN_NS / res->time_taken_ns);
+	printf(" B/s   : %lf\n",
+	       (double)res->bytes_written * SEC_IN_NS / res->time_taken_ns);
+	printf(" MiB/s : %lf\n", (double)res->bytes_written * SEC_IN_NS /
+					 (1024 * 1024) / res->time_taken_ns);
 	print_frames_stat(res, opts);
 	print_frame_times(res, opts);
 }
@@ -156,11 +151,12 @@ void print_header_csv(const opts_t *opts)
 		extra = ",omin,oavg,omax,iomin,ioavg,iomax,cmin,cavg,cmax";
 
 	printf("case,profile,threads,frames,bytes,time,fps,bps,mibps,"
-			"fmin,favg,fmax%s\n", extra);
+	       "fmin,favg,fmax%s\n",
+	       extra);
 }
 
 void print_results_csv(const char *tcase, const opts_t *opts,
-		const test_result_t *res)
+		       const test_result_t *res)
 {
 	if (!res)
 		return;
@@ -173,13 +169,12 @@ void print_results_csv(const char *tcase, const opts_t *opts,
 	printf("%" PRIu64 ",", res->frames_written);
 	printf("%" PRIu64 ",", res->bytes_written);
 	printf("%" PRIu64 ",", res->time_taken_ns);
-	printf("%lf,", (double)res->frames_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf("%lf,", (double)res->bytes_written * SEC_IN_NS
-			/ res->time_taken_ns);
-	printf("%lf,", (double)res->bytes_written * SEC_IN_NS
-			/ (1024 * 1024)
-			/ res->time_taken_ns);
+	printf("%lf,",
+	       (double)res->frames_written * SEC_IN_NS / res->time_taken_ns);
+	printf("%lf,",
+	       (double)res->bytes_written * SEC_IN_NS / res->time_taken_ns);
+	printf("%lf,", (double)res->bytes_written * SEC_IN_NS / (1024 * 1024) /
+			       res->time_taken_ns);
 	print_frames_stat(res, opts);
 	printf("\n");
 	print_frame_times(res, opts);

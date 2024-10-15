@@ -45,7 +45,7 @@ int generic_resolve_flags(platform_open_flags_t flags)
 	int oflags = 0;
 
 	if ((flags & (PLATFORM_OPEN_READ | PLATFORM_OPEN_WRITE)) ==
-			(PLATFORM_OPEN_READ | PLATFORM_OPEN_WRITE))
+	    (PLATFORM_OPEN_READ | PLATFORM_OPEN_WRITE))
 		oflags |= O_RDWR;
 	else if (flags & (PLATFORM_OPEN_WRITE))
 		oflags |= O_WRONLY;
@@ -64,7 +64,7 @@ int generic_resolve_flags(platform_open_flags_t flags)
 
 #if defined(_WIN32)
 static inline platform_handle_t win_open(const char *fname,
-	platform_open_flags_t flags, int mode)
+					 platform_open_flags_t flags, int mode)
 {
 	unsigned int access = 0;
 	unsigned int creat = 0;
@@ -86,13 +86,7 @@ static inline platform_handle_t win_open(const char *fname,
 		oflags |= FILE_FLAG_WRITE_THROUGH;
 	}
 
-	h = CreateFile(fname,
-			access,
-			0,
-			NULL,
-			creat,
-			oflags,
-			NULL);
+	h = CreateFile(fname, access, 0, NULL, creat, oflags, NULL);
 	if (h == INVALID_HANDLE_VALUE)
 		return -1;
 	return _open_osfhandle((size_t)h, 0);
@@ -104,7 +98,7 @@ static inline int win_close(platform_handle_t handle)
 }
 
 static inline size_t win_write(platform_handle_t handle, const char *buf,
-		size_t size)
+			       size_t size)
 {
 	return write(handle, buf, size);
 }
@@ -153,9 +147,9 @@ static inline int win_stat(const char *fname, platform_stat_t *st)
 	return res;
 }
 
-int win_thread_create(uint64_t *thread_id, void*(*start)(void*), void *arg)
+int win_thread_create(uint64_t *thread_id, void *(*start)(void *), void *arg)
 {
-	return pthread_create((pthread_t*)thread_id, NULL, start, arg);
+	return pthread_create((pthread_t *)thread_id, NULL, start, arg);
 }
 
 int win_thread_cancel(uint64_t thread_id)
@@ -168,8 +162,8 @@ int win_thread_join(uint64_t thread_id, void **retval)
 	return pthread_join((pthread_t)thread_id, retval);
 }
 #else
-static inline platform_handle_t generic_open(const char *fname,
-	platform_open_flags_t flags, int mode)
+static inline platform_handle_t
+generic_open(const char *fname, platform_open_flags_t flags, int mode)
 {
 	int oflags = generic_resolve_flags(flags);
 
@@ -182,13 +176,13 @@ static inline int generic_close(platform_handle_t handle)
 }
 
 static inline size_t generic_write(platform_handle_t handle, const char *buf,
-		size_t size)
+				   size_t size)
 {
 	return write(handle, buf, size);
 }
 
 static inline size_t generic_read(platform_handle_t handle, char *buf,
-		size_t size)
+				  size_t size)
 {
 	return read(handle, buf, size);
 }
@@ -222,9 +216,10 @@ static inline int generic_stat(const char *fname, platform_stat_t *st)
 	return res;
 }
 
-int generic_thread_create(uint64_t *thread_id, void*(*start)(void*), void *arg)
+int generic_thread_create(uint64_t *thread_id, void *(*start)(void *),
+			  void *arg)
 {
-	return pthread_create((pthread_t*)thread_id, NULL, start, arg);
+	return pthread_create((pthread_t *)thread_id, NULL, start, arg);
 }
 
 int generic_thread_cancel(uint64_t thread_id)
@@ -273,8 +268,7 @@ static platform_t default_platform = {
 #endif
 };
 
-
-const platform_t * platform_get(void)
+const platform_t *platform_get(void)
 {
 	return &default_platform;
 }

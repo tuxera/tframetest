@@ -60,8 +60,8 @@ void *run_write_test_thread(void *arg)
 	else if (info->opts->random)
 		mode = TEST_MODE_RANDOM;
 	info->res = tester_run_write(info->platform, info->opts->path,
-			info->opts->frm, info->start_frame, info->frames,
-			info->fps, mode);
+				     info->opts->frm, info->start_frame,
+				     info->frames, info->fps, mode);
 
 	return NULL;
 }
@@ -81,8 +81,8 @@ void *run_read_test_thread(void *arg)
 	else if (info->opts->random)
 		mode = TEST_MODE_RANDOM;
 	info->res = tester_run_read(info->platform, info->opts->path,
-			info->opts->frm, info->start_frame, info->frames,
-			info->fps, mode);
+				    info->opts->frm, info->start_frame,
+				    info->frames, info->fps, mode);
 
 	return NULL;
 }
@@ -121,12 +121,12 @@ void calculate_frame_range(thread_info_t *threads, const opts_t *opts)
 }
 
 int run_test_threads(const platform_t *platform, const char *tst,
-		const opts_t *opts, void *(*tfunc)(void*))
+		     const opts_t *opts, void *(*tfunc)(void *))
 {
 	size_t i;
 	int res;
 	thread_info_t *threads;
-	test_result_t tres = {0};
+	test_result_t tres = { 0 };
 	uint64_t start;
 
 	threads = platform->calloc(opts->threads, sizeof(*threads));
@@ -142,8 +142,8 @@ int run_test_threads(const platform_t *platform, const char *tst,
 		threads[i].id = i;
 		threads[i].platform = platform;
 		threads[i].opts = opts;
-		res = platform->thread_create(&threads[i].thread,
-				tfunc, (void*)&threads[i]);
+		res = platform->thread_create(&threads[i].thread, tfunc,
+					      (void *)&threads[i]);
 		if (res) {
 			size_t j;
 			void *ret;
@@ -170,7 +170,7 @@ int run_test_threads(const platform_t *platform, const char *tst,
 		print_results(&threads[i].res);
 #endif
 		if (test_result_aggregate(&tres, &threads[i].res))
-		    res = 1;
+			res = 1;
 		result_free(platform, &threads[i].res);
 	}
 	tres.time_taken_ns = timing_elapsed(start);
@@ -196,8 +196,7 @@ int run_tests(opts_t *opts)
 		return 1;
 
 	platform = platform_get();
-	if (opts->profile.prof == PROF_INVALID &&
-			opts->prof != PROF_INVALID) {
+	if (opts->profile.prof == PROF_INVALID && opts->prof != PROF_INVALID) {
 		opts->profile = profile_get_by_type(opts->prof);
 	}
 	if (opts->mode & TEST_EMPTY)
@@ -216,8 +215,8 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
-	opts->profile.header_size = (opts->mode & TEST_EMPTY)
-			? 0 : opts->header_size;
+	opts->profile.header_size =
+		(opts->mode & TEST_EMPTY) ? 0 : opts->header_size;
 	if (opts->mode & TEST_WRITE)
 		opts->frm = frame_gen(platform, opts->profile);
 	else if (opts->mode & TEST_READ) {
@@ -242,7 +241,7 @@ int run_tests(opts_t *opts)
 			return 1;
 		}
 		run_test_threads(platform, "write", opts,
-				&run_write_test_thread);
+				 &run_write_test_thread);
 	}
 	if (opts->mode & TEST_READ) {
 		run_test_threads(platform, "read", opts, &run_read_test_thread);
@@ -349,9 +348,9 @@ void list_profiles(void)
 
 		printf("  %s\n", prof.name);
 		printf("     %zux%zu, %zu bits, %zuB header\n",
-				prof.width, prof.height,
-				prof.bytes_per_pixel * 8,
-				prof.header_size);
+		       prof.width, prof.height,
+		       prof.bytes_per_pixel * 8,
+		       prof.header_size);
 	}
 }
 
@@ -381,11 +380,11 @@ static struct option long_opts[] = {
 };
 static size_t long_opts_cnt = sizeof(long_opts) / sizeof(long_opts[0]);
 static struct long_opt_desc long_opt_descs[] = {
-	{ "write", "Perform write tests, size/profile as parameter"},
-	{ "read", "Perform read tests"},
-	{ "empty", "Perform write tests with empty frames"},
-	{ "list-profiles", "List available profiles"},
-	{ "threads", "Use number of threads (default 1)"},
+	{ "write", "Perform write tests, size/profile as parameter" },
+	{ "read", "Perform read tests" },
+	{ "empty", "Perform write tests with empty frames" },
+	{ "list-profiles", "List available profiles" },
+	{ "threads", "Use number of threads (default 1)" },
 	{ "num-frames", "Write number of frames (default 1800)" },
 	{ "fps", "Limit frame rate to frames per second" },
 	{ "reverse", "Access files in reverse order" },
@@ -396,13 +395,13 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "times", "Show breakdown of completion times (open/io/close)" },
 	{ "frametimes", "Show detailed timings of every frames in CSV format" },
 	{ "histogram", "Show histogram of completion times at the end" },
-	{ "version", "Display version information"},
+	{ "version", "Display version information" },
 	{ "help", "Display this help" },
 	{ 0, 0 },
 };
 
 #define XSTRING(x) #x
-#define VERSION_STRING(a,b,c) XSTRING(a) "." XSTRING(b) "." XSTRING(c)
+#define VERSION_STRING(a, b, c) XSTRING(a) "." XSTRING(b) "." XSTRING(c)
 void version(void)
 {
 	fprintf(stderr, "tframetest %s\n", VERSION_STRING(MAJOR, MINOR, PATCH));
@@ -435,15 +434,14 @@ void usage(const char *name)
 			p = DESC_POS - p;
 		else
 			p = 1;
-		fprintf(stderr, "%*s%s\n", p, " ",
-				long_opt_descs[i].desc);
+		fprintf(stderr, "%*s%s\n", p, " ", long_opt_descs[i].desc);
 	}
 }
 #undef DESC_POS
 
 int main(int argc, char **argv)
 {
-	opts_t opts = {0};
+	opts_t opts = { 0 };
 	int c = 0;
 	int opt_index = 0;
 
@@ -452,7 +450,6 @@ int main(int argc, char **argv)
 	opts.frames = 1800;
 	opts.header_size = 65536;
 	while (1) {
-
 		c = getopt_long(argc, argv, "rw:elt:n:f:vmhVc",
 				long_opts, &opt_index);
 		if (c == -1)
@@ -550,7 +547,7 @@ int main(int argc, char **argv)
 
 invalid_long:
 	fprintf(stderr, "Invalid argument for option --%s: %s\n",
-			long_opts[opt_index].name, optarg);
+		long_opts[opt_index].name, optarg);
 	return 1;
 
 invalid_short:

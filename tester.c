@@ -31,10 +31,9 @@
 #include "tester.h"
 #include "timing.h"
 
-
 static inline size_t tester_frame_write(const platform_t *platform,
-		const char *path, frame_t *frame, size_t num,
-		test_completion_t *comp)
+					const char *path, frame_t *frame,
+					size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	size_t ret;
@@ -43,9 +42,10 @@ static inline size_t tester_frame_write(const platform_t *platform,
 	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
-	f = platform->open(name, PLATFORM_OPEN_CREATE
-			| PLATFORM_OPEN_WRITE
-			| PLATFORM_OPEN_DIRECT, 0666);
+	f = platform->open(name,
+			   PLATFORM_OPEN_CREATE | PLATFORM_OPEN_WRITE |
+				   PLATFORM_OPEN_DIRECT,
+			   0666);
 	if (f <= 0)
 		return 0;
 	comp->open = timing_start();
@@ -63,8 +63,8 @@ static inline size_t tester_frame_write(const platform_t *platform,
 }
 
 static inline size_t tester_frame_read(const platform_t *platform,
-		const char *path, frame_t *frame, size_t num,
-		test_completion_t *comp)
+				       const char *path, frame_t *frame,
+				       size_t num, test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	size_t ret;
@@ -73,8 +73,8 @@ static inline size_t tester_frame_read(const platform_t *platform,
 	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
 	name[PATH_MAX] = 0;
 
-	f = platform->open(name, PLATFORM_OPEN_READ
-			| PLATFORM_OPEN_DIRECT, 0666);
+	f = platform->open(name, PLATFORM_OPEN_READ | PLATFORM_OPEN_DIRECT,
+			   0666);
 	if (f <= 0)
 		return 0;
 	comp->open = timing_start();
@@ -119,10 +119,10 @@ static inline void shuffle_array(size_t *arr, size_t size)
 }
 
 test_result_t tester_run_write(const platform_t *platform, const char *path,
-		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
-		test_mode_t mode)
+			       frame_t *frame, size_t start_frame,
+			       size_t frames, size_t fps, test_mode_t mode)
 {
-	test_result_t res = {0};
+	test_result_t res = { 0 };
 	size_t i;
 	size_t budget;
 	size_t end_frame;
@@ -163,7 +163,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 			break;
 		}
 		if (!tester_frame_write(platform, path, frame, frame_idx,
-				&res.completion[i - start_frame]))
+					&res.completion[i - start_frame]))
 			break;
 		res.completion[i - start_frame].frame = timing_start();
 		++res.frames_written;
@@ -184,10 +184,10 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 }
 
 test_result_t tester_run_read(const platform_t *platform, const char *path,
-		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
-		test_mode_t mode)
+			      frame_t *frame, size_t start_frame, size_t frames,
+			      size_t fps, test_mode_t mode)
 {
-	test_result_t res = {0};
+	test_result_t res = { 0 };
 	size_t i;
 	size_t budget;
 	size_t end_frame;
@@ -228,7 +228,7 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 			break;
 		}
 		if (!tester_frame_read(platform, path, frame, frame_idx,
-				&res.completion[i - start_frame]))
+				       &res.completion[i - start_frame]))
 			return res;
 		res.completion[i - start_frame].frame = timing_start();
 		++res.frames_written;

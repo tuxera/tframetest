@@ -136,7 +136,7 @@ static inline size_t hist_cnts(void)
 
 void print_histogram(const test_result_t *res)
 {
-	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
+	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = { 0 };
 	uint64_t max;
 	size_t i, j;
 	size_t sbcnt;
@@ -159,7 +159,6 @@ void print_histogram(const test_result_t *res)
 
 			th = cnts[i] * HISTOGRAM_HEIGHT / (max + 1);
 			rth = HISTOGRAM_HEIGHT - 1 - th;
-
 
 			if (j > rth)
 				printf("*");
