@@ -34,6 +34,9 @@ extern unsigned long unittest_asserts;
 #define TEST_INIT() unsigned long ok = 0; unsigned long tests = 0;
 #define TEST(X) ++tests; if (!test_ ## X ()) ++ok; else { \
 	printf(" FAILED: %s\n", #X); return 1; }
+#define TESTF(X, S, T) { void *state=NULL; S(&state); ++tests; \
+	if (!test_ ## X (&state)) { ++ok; T(&state); } else { \
+	printf(" FAILED: %s\n", #X); T(&state); return 1; }}
 #define TEST_END() return tests == ok ? 0 : 1;
 
 #define TEST_ASSERT(X) if (!(X)) { \

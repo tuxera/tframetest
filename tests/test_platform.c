@@ -214,7 +214,7 @@ static platform_t test_platform = {
 };
 
 
-const platform_t * test_platform_get(void)
+const platform_t *test_platform_get(void)
 {
 	return &test_platform;
 }

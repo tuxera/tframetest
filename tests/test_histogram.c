@@ -172,7 +172,6 @@ int test_histogram(void)
 	TEST(histogram_collect_cnts);
 	TEST(histogram_cnts_max);
 
-
 	TEST_END();
 }
 

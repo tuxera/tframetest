@@ -28,8 +28,6 @@
 #include "unittest.h"
 #include "frame.h"
 
-static const platform_t *frame_platform = NULL;
-
 static profile_t default_test_profile = { "SD-32bit-cmp", PROF_SD, 720, 480, 4, 0 };
 
 profile_t profile_get_by_name(const char *name)
@@ -55,32 +53,44 @@ size_t profile_count(void)
 	return 1;
 }
 
-static frame_t *gen_default_frame(void)
+void test_setup(void **state)
+{
+	*state = (void*)test_platform_get();
+}
+
+void test_teardown(void **state)
+{
+	test_platform_finalize();
+}
+
+static frame_t *gen_default_frame(const platform_t *platform)
 {
 	profile_t prof;
 
 	prof = profile_get_by_index(1);
-	return frame_gen(frame_platform, prof);
+	return frame_gen(platform, prof);
 }
 
-int test_frame_gen(void)
+int test_frame_gen(void **state)
 {
+	const platform_t *platform = *state;
 	frame_t *frm;
 
-	frm = gen_default_frame();
+	frm = gen_default_frame(platform);
 	TEST_ASSERT(frm);
 
-	frame_destroy(frame_platform, frm);
+	frame_destroy(platform, frm);
 
 	return 0;
 }
 
-int test_frame_fill(void)
+int test_frame_fill(void **state)
 {
+	const platform_t *platform = *state;
 	frame_t *frm;
 	size_t i;
 
-	frm = gen_default_frame();
+	frm = gen_default_frame(platform);
 	TEST_ASSERT(frm);
 
 	/* Default fill with 't' */
@@ -92,20 +102,21 @@ int test_frame_fill(void)
 	for (i = 0; i < frm->size; i++)
 		TEST_ASSERT_EQI(i, ((unsigned char*)frm->data)[i], 0x42);
 
-	frame_destroy(frame_platform, frm);
+	frame_destroy(platform, frm);
 
 	return 0;
 }
 
-int test_frame_write_read(void)
+int test_frame_write_read(void **state)
 {
+	const platform_t *platform = *state;
 	frame_t *frm;
 	frame_t *frm_read;
 	size_t fw;
 	int fd;
 
-	frm = gen_default_frame();
-	frm_read = gen_default_frame();
+	frm = gen_default_frame(platform);
+	frm_read = gen_default_frame(platform);
 	TEST_ASSERT(frm);
 	TEST_ASSERT(frm_read);
 
@@ -113,26 +124,58 @@ int test_frame_write_read(void)
 	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 0x42);
 	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 't');
 
-	fd = frame_platform->open("tst1", PLATFORM_OPEN_WRITE |
+	fd = platform->open("tst1", PLATFORM_OPEN_WRITE |
 			PLATFORM_OPEN_CREATE |
 			PLATFORM_OPEN_DIRECT, 0666);
-	fw = frame_write(frame_platform, fd, frm);
+	fw = frame_write(platform, fd, frm);
 	TEST_ASSERT_EQ(fw, frm->size);
-	frame_platform->close(fd);
+	platform->close(fd);
 
 	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 't');
 
-	fd = frame_platform->open("tst1", PLATFORM_OPEN_READ |
+	fd = platform->open("tst1", PLATFORM_OPEN_READ |
 			PLATFORM_OPEN_DIRECT, 0666);
-	fw = frame_read(frame_platform, fd, frm_read);
+	fw = frame_read(platform, fd, frm_read);
 	TEST_ASSERT_EQ(fw, frm->size);
 
 	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 0x42);
 	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 0x42);
-	frame_platform->close(fd);
+	platform->close(fd);
 
-	frame_destroy(frame_platform, frm);
-	frame_destroy(frame_platform, frm_read);
+	frame_destroy(platform, frm);
+	frame_destroy(platform, frm_read);
+
+	return 0;
+}
+
+int test_frame_from_file(void **state)
+{
+	const platform_t *platform = *state;
+	frame_t *frm;
+	int fd;
+
+	frm = frame_from_file(platform, "tst1");
+	TEST_ASSERT(!frm);
+
+	frm = gen_default_frame(platform);
+	fd = platform->open("tst2", PLATFORM_OPEN_WRITE |
+			PLATFORM_OPEN_CREATE |
+			PLATFORM_OPEN_DIRECT, 0666);
+	(void)frame_write(platform, fd, frm);
+	platform->close(fd);
+
+	frm = frame_from_file(platform, "tst2");
+	TEST_ASSERT(frm);
+
+	frm = gen_default_frame(platform);
+	fd = platform->open("tst3", PLATFORM_OPEN_WRITE |
+			PLATFORM_OPEN_CREATE |
+			PLATFORM_OPEN_DIRECT, 0666);
+	(void)frame_write(platform, fd, NULL);
+	platform->close(fd);
+
+	frm = frame_from_file(platform, "tst3");
+	TEST_ASSERT(frm);
 
 	return 0;
 }
@@ -141,13 +184,10 @@ int test_frame(void)
 {
 	TEST_INIT();
 
-	frame_platform = test_platform_get();
-
-	TEST(frame_gen);
-	TEST(frame_fill);
-	TEST(frame_write_read);
-
-	test_platform_finalize();
+	TESTF(frame_gen, test_setup, test_teardown);
+	TESTF(frame_fill, test_setup, test_teardown);
+	TESTF(frame_write_read, test_setup, test_teardown);
+	TESTF(frame_from_file, test_setup, test_teardown);
 
 	TEST_END();
 }

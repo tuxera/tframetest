@@ -8,8 +8,6 @@
 
 #define SLEEP_TIME 1000UL
 
-static const platform_t *tester_platform = NULL;
-
 size_t frame_write(const platform_t *platform, platform_handle_t f,
 		frame_t *frame)
 {
@@ -61,6 +59,17 @@ int usleep(useconds_t usec)
 	return 0;
 }
 
+void test_setup(void **state)
+{
+	const platform_t *frame_platform = test_platform_get();
+	*state = (void*)frame_platform;
+}
+
+void test_teardown(void **state)
+{
+	test_platform_finalize();
+}
+
 int test_timing_start_elapsed(void)
 {
 	uint64_t start;
@@ -79,15 +88,15 @@ int test_timing_start_elapsed(void)
 	return 0;
 }
 
-static frame_t *gen_default_frame(void)
+static frame_t *gen_default_frame(const platform_t *platform)
 {
 	profile_t prof;
 
 	prof = profile_get_by_index(1);
-	return frame_gen(tester_platform, prof);
+	return frame_gen(platform, prof);
 }
 
-static int tester_run_write_read_with(test_mode_t mode, size_t fps)
+static int tester_run_write_read_with(const platform_t *platform, test_mode_t mode, size_t fps)
 {
 	const size_t frames = 5;
 	test_result_t res;
@@ -96,62 +105,61 @@ static int tester_run_write_read_with(test_mode_t mode, size_t fps)
 	frame_t *frm;
 	frame_t *frm_res;
 
-	frm = gen_default_frame();
+	frm = gen_default_frame(platform);
 	TEST_ASSERT(frm);
 
-	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
+	f = platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_EQ(f, -1);
 
-	res = tester_run_write(tester_platform, ".", frm, 0, frames, fps,
-			mode);
+	res = tester_run_write(platform, ".", frm, 0, frames, fps, mode);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
 	TEST_ASSERT(res.completion);
 
-	result_free(tester_platform, &res);
+	result_free(platform, &res);
 
-	f = tester_platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
+	f = platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_NE(f, -1);
-	tester_platform->close(f);
+	platform->close(f);
 
-	frm_res = tester_get_frame_read(tester_platform, ".");
+	frm_res = tester_get_frame_read(platform, ".");
 	TEST_ASSERT(frm_res);
 
-	res_read = tester_run_read(tester_platform, ".", frm_res, 0, frames,
+	res_read = tester_run_read(platform, ".", frm_res, 0, frames,
 			fps, mode);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT(res_read.completion);
 
-	result_free(tester_platform, &res_read);
+	result_free(platform, &res_read);
 
 	return 0;
 }
 
-int test_tester_run_write_read(void)
+int test_tester_run_write_read(void **state)
 {
-	return tester_run_write_read_with(TEST_MODE_NORM, 0);
+	return tester_run_write_read_with(*state, TEST_MODE_NORM, 0);
 }
 
-int test_tester_run_write_read_reverse(void)
+int test_tester_run_write_read_reverse(void **state)
 {
-	return tester_run_write_read_with(TEST_MODE_REVERSE, 0);
+	return tester_run_write_read_with(*state, TEST_MODE_REVERSE, 0);
 }
 
-int test_tester_run_write_read_random(void)
+int test_tester_run_write_read_random(void **state)
 {
-	return tester_run_write_read_with(TEST_MODE_RANDOM, 0);
+	return tester_run_write_read_with(*state, TEST_MODE_RANDOM, 0);
 }
 
-int test_tester_run_write_read_fps(void)
+int test_tester_run_write_read_fps(void **state)
 {
 	uint64_t start;
 	uint64_t time;
 	int res;
 
 	start = timing_start();
-	res = tester_run_write_read_with(TEST_MODE_NORM, 40);
+	res = tester_run_write_read_with(*state, TEST_MODE_NORM, 40);
 	time = timing_elapsed(start);
 
 	/* 5 frames, write and read totals 10 frames, 40 fps == 0.25 second */
@@ -192,19 +200,12 @@ int test_tester(void)
 {
 	TEST_INIT();
 
-	tester_platform = test_platform_get();
-
 	TEST(timing_start_elapsed);
-	TEST(tester_run_write_read);
-	test_platform_finalize();
-	TEST(tester_run_write_read_reverse);
-	test_platform_finalize();
-	TEST(tester_run_write_read_random);
-	test_platform_finalize();
+	TESTF(tester_run_write_read, test_setup, test_teardown);
+	TESTF(tester_run_write_read_reverse, test_setup, test_teardown);
+	TESTF(tester_run_write_read_random, test_setup, test_teardown);
 	TEST(tester_result_aggregate);
-	TEST(tester_run_write_read_fps);
-
-	test_platform_finalize();
+	TESTF(tester_run_write_read_fps, test_setup, test_teardown);
 
 	TEST_END();
 }
