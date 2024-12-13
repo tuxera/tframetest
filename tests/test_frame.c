@@ -163,9 +163,11 @@ int test_frame_from_file(void **state)
 			PLATFORM_OPEN_DIRECT, 0666);
 	(void)frame_write(platform, fd, frm);
 	platform->close(fd);
+	frame_destroy(platform, frm);
 
 	frm = frame_from_file(platform, "tst2");
 	TEST_ASSERT(frm);
+	frame_destroy(platform, frm);
 
 	frm = gen_default_frame(platform);
 	fd = platform->open("tst3", PLATFORM_OPEN_WRITE |
@@ -173,9 +175,12 @@ int test_frame_from_file(void **state)
 			PLATFORM_OPEN_DIRECT, 0666);
 	(void)frame_write(platform, fd, NULL);
 	platform->close(fd);
+	frame_destroy(platform, frm);
 
 	frm = frame_from_file(platform, "tst3");
 	TEST_ASSERT(frm);
+
+	frame_destroy(platform, frm);
 
 	return 0;
 }

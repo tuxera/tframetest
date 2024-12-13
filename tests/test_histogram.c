@@ -141,6 +141,8 @@ int test_histogram_collect_cnts(void)
 	for (i = 0; i < sbcnt; i++)
 		TEST_ASSERT_EQI(i, cnts[i], expected[i]);
 
+	free(res.completion);
+
 	return 0;
 }
 
@@ -159,6 +161,8 @@ int test_histogram_cnts_max()
 	sbcnt = hist_cnts();
 	max = hist_cnts_max(cnts, sbcnt);
 	TEST_ASSERT_EQ(max, 8);
+
+	free(res.completion);
 
 	return 0;
 }

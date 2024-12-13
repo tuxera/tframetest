@@ -5,6 +5,7 @@
 #include "unittest.h"
 #include "tester.h"
 #include "timing.h"
+#include "frame.h"
 
 #define SLEEP_TIME 1000UL
 
@@ -38,6 +39,12 @@ frame_t *frame_gen(const platform_t *platform, profile_t profile)
 	(void)platform;
 	(void)profile;
 	return (frame_t*)calloc(1, sizeof(frame_t));
+}
+
+void frame_destroy(const platform_t *platform, frame_t *frame)
+{
+	(void)platform;
+	free(frame);
 }
 
 profile_t profile_get_by_index(size_t idx)
@@ -134,6 +141,8 @@ static int tester_run_write_read_with(const platform_t *platform, test_mode_t mo
 
 	result_free(platform, &res_read);
 
+	frame_destroy(platform, frm);
+	frame_destroy(platform, frm_res);
 	return 0;
 }
 

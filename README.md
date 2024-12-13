@@ -22,7 +22,7 @@ This should build `tframetest` binary into `build` folder.
 To build for FreeBSD you need to use `gmake` instead since the Makefile is not
 compatible with FreeBSD `make`.
 
-To build Windows binary there's script `build_win.sh`.
+To build Windows binary there's script `build_win.sh` or the `make win` target.
 One can cross-compile the tool in a Linux system.
 We have tested `i686-w64-mingw32-gcc` and `x86_64-w64-mingw32-gcc` available
 in Ubuntu/Debian repository as `mingw-w64`.
@@ -31,6 +31,7 @@ The default build for Windows is 32-bit but 64-bit build is possible as well:
 	sudo apt install mingw-w64 zip
 	./build_win.sh
 	CROSS=x86_64-w64-mingw32- ./build_win.sh
+
 
 ## Usage
 
@@ -48,6 +49,7 @@ To perform read test for those freshly written frames:
 There's more options available, please see the help for more info:
 
 	build/tframetest --help
+
 
 ## License
 
