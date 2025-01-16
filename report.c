@@ -1,7 +1,7 @@
 /*
  * This file is part of tframetest.
  *
- * Copyright (c) 2023 Tuxera Inc.
+ * Copyright (c) 2023-2025 Tuxera Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
