@@ -32,8 +32,10 @@
 
 #include "platform.h"
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <windows.h>
+#endif
+#if defined(_WIN32) || defined(__APPLE__)
 /* Faking O_DIRECT for now... */
 #ifndef O_DIRECT
 #define O_DIRECT 0
