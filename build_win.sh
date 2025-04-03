@@ -13,8 +13,11 @@ export CC="${CROSS}gcc"
 export STRIP="${CROSS}strip"
 export AR="${CROSS}ar"
 
-LIB_SRC_PATH="/usr/${SRC_D}/lib"
 LIBS=(libwinpthread-1.dll)
+# Paths are hardcoded for now
+LIB_SRC_PATH="/usr/${SRC_D}/lib"
+LIB_LICENSE_PATH="/usr/share/doc/mingw-w64-common/copyright"
+LICENSE_PATH="COPYING"
 
 if ! "${CC}" -v > /dev/null 2>&1 ; then
 	echo "Please install ${CC}"
@@ -40,5 +43,8 @@ cp "${BUILD_FOLDER}/tframetest.exe" "${DST}/"
 for lib in "${LIBS[@]}"; do
 	cp "${LIB_SRC_PATH}/${lib}" "${DST}/"
 done
+cp "${LIB_LICENSE_PATH}" "${DST}/copying-mingw.txt"
+cp "${LICENSE_PATH}" "${DST}/"
+rm -f "${DST}.zip"
 zip -r "${DST}.zip" "${DST}"
 rm -rf "${DST:?}"
