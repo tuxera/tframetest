@@ -27,35 +27,13 @@
 
 /* Histogram buckets in ns */
 static uint64_t buckets[] = {
-                 0,
-	    200000,
-	    500000,
-	   1000000,
-	   2000000,
-	   5000000,
-	  10000000,
-	  20000000,
-	  50000000,
-	 100000000,
-	 200000000,
-	 500000000,
-	1000000000,
+	0,	   200000,    500000,	  1000000,  2000000,
+	5000000,   10000000,  20000000,	  50000000, 100000000,
+	200000000, 500000000, 1000000000,
 };
 static char *bucket_label[] = {
-	" 0 ",
-	".2 ",
-	".5 ",
-	" 1 ",
-	" 2 ",
-	" 5 ",
-	"10 ",
-	"20 ",
-	"50 ",
-	"100",
-	"200",
-	"500",
-	">1s",
-	"ovf",
+	" 0 ", ".2 ", ".5 ", " 1 ", " 2 ", " 5 ", "10 ",
+	"20 ", "50 ", "100", "200", "500", ">1s", "ovf",
 };
 #define buckets_cnt (sizeof(buckets) / sizeof(*buckets))
 #define SUB_BUCKET_CNT 5
@@ -107,8 +85,8 @@ static inline void hist_collect_cnts(const test_result_t *res, uint64_t *cnts)
 	 * into proper one.
 	 */
 	for (i = 0; i < res->frames_written; i++) {
-		size_t frametime = res->completion[i].frame -
-				res->completion[i].start;
+		size_t frametime =
+			res->completion[i].frame - res->completion[i].start;
 		size_t b = time_get_bucket(frametime);
 		size_t sb = time_get_sub_bucket(b, frametime);
 

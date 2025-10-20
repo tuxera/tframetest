@@ -39,8 +39,8 @@ void frame_destroy(const platform_t *platform, frame_t *frame);
 size_t frame_fill(frame_t *frame, char val);
 
 size_t frame_write(const platform_t *platform, platform_handle_t f,
-		frame_t *frame);
+		   frame_t *frame);
 size_t frame_read(const platform_t *platform, platform_handle_t f,
-		frame_t *frame);
+		  frame_t *frame);
 
 #endif

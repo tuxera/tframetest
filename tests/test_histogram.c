@@ -100,8 +100,8 @@ void gen_completions(test_result_t *res)
 {
 	size_t i;
 
-	res->completion = malloc(sizeof(*res->completion) *
-			res->frames_written);
+	res->completion =
+		malloc(sizeof(*res->completion) * res->frames_written);
 	for (i = 0; i < res->frames_written; i++) {
 		res->completion[i].start = 1;
 		res->completion[i].open = 2;
@@ -116,15 +116,12 @@ int test_histogram_collect_cnts(void)
 	test_result_t res = {
 		.frames_written = 100,
 	};
-	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
+	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = { 0 };
 	uint64_t expected[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {
-		8, 2, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 0, 1, 1, 1, 2, 1, 1, 1,
-		2, 2, 2, 2, 1, 3, 2, 2, 1, 2,
-		3, 2, 3, 2, 2, 5, 5, 4, 4, 3,
-		5, 4, 4, 4, 3, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		8, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 2, 1,
+		1, 1, 2, 2, 2, 2, 1, 3, 2, 2, 1, 2, 3, 2, 3, 2, 2, 5,
+		5, 4, 4, 3, 5, 4, 4, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	};
 	size_t sbcnt;
 	size_t i;
@@ -151,7 +148,7 @@ int test_histogram_cnts_max()
 	test_result_t res = {
 		.frames_written = 100,
 	};
-	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = {0};
+	uint64_t cnts[SUB_BUCKET_CNT * (buckets_cnt + 1)] = { 0 };
 	uint64_t max;
 	size_t sbcnt;
 
@@ -184,7 +181,7 @@ int test_histogram_print()
 
 	print_histogram(&res);
 
-	res.completion = &compl;
+	res.completion = &compl ;
 	print_histogram(&res);
 
 	test_ignore_printf(0);

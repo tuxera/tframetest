@@ -30,7 +30,7 @@
 #define SLEEP_TIME 1000UL
 
 size_t frame_write(const platform_t *platform, platform_handle_t f,
-		frame_t *frame)
+		   frame_t *frame)
 {
 	(void)platform;
 	(void)f;
@@ -39,7 +39,7 @@ size_t frame_write(const platform_t *platform, platform_handle_t f,
 }
 
 size_t frame_read(const platform_t *platform, platform_handle_t f,
-		frame_t *frame)
+		  frame_t *frame)
 {
 	(void)platform;
 	(void)f;
@@ -51,14 +51,14 @@ frame_t *frame_from_file(const platform_t *platform, const char *fname)
 {
 	(void)platform;
 	(void)fname;
-	return (frame_t*)calloc(1, sizeof(frame_t));
+	return (frame_t *)calloc(1, sizeof(frame_t));
 }
 
 frame_t *frame_gen(const platform_t *platform, profile_t profile)
 {
 	(void)platform;
 	(void)profile;
-	return (frame_t*)calloc(1, sizeof(frame_t));
+	return (frame_t *)calloc(1, sizeof(frame_t));
 }
 
 void frame_destroy(const platform_t *platform, frame_t *frame)
@@ -89,7 +89,7 @@ int usleep(useconds_t usec)
 void test_setup(void **state)
 {
 	const platform_t *frame_platform = test_platform_get();
-	*state = (void*)frame_platform;
+	*state = (void *)frame_platform;
 }
 
 void test_teardown(void **state)
@@ -123,7 +123,8 @@ static frame_t *gen_default_frame(const platform_t *platform)
 	return frame_gen(platform, prof);
 }
 
-static int tester_run_write_read_with(const platform_t *platform, test_mode_t mode, size_t fps)
+static int tester_run_write_read_with(const platform_t *platform,
+				      test_mode_t mode, size_t fps)
 {
 	const size_t frames = 5;
 	test_result_t res;
@@ -138,7 +139,8 @@ static int tester_run_write_read_with(const platform_t *platform, test_mode_t mo
 	f = platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_EQ(f, -1);
 
-	res = tester_run_write(platform, ".", frm, 0, frames, fps, mode, TEST_FILES_MULTIPLE);
+	res = tester_run_write(platform, ".", frm, 0, frames, fps, mode,
+			       TEST_FILES_MULTIPLE);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
@@ -153,8 +155,8 @@ static int tester_run_write_read_with(const platform_t *platform, test_mode_t mo
 	frm_res = tester_get_frame_read(platform, ".");
 	TEST_ASSERT(frm_res);
 
-	res_read = tester_run_read(platform, ".", frm_res, 0, frames,
-			fps, mode, TEST_FILES_MULTIPLE);
+	res_read = tester_run_read(platform, ".", frm_res, 0, frames, fps, mode,
+				   TEST_FILES_MULTIPLE);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT(res_read.completion);
@@ -243,9 +245,9 @@ int test_tester_run_write_read_single_file(void **state)
 
 int test_tester_result_aggregate(void)
 {
-	test_result_t a = {0};
-	test_result_t b = {0};
-	test_result_t c = {0};
+	test_result_t a = { 0 };
+	test_result_t b = { 0 };
+	test_result_t c = { 0 };
 
 	a.frames_written = 100;
 	a.bytes_written = 424242;

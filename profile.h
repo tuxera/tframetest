@@ -43,7 +43,6 @@ typedef struct profile_t {
 	size_t header_size;
 } profile_t;
 
-
 size_t profile_count(void);
 profile_t profile_get_by_name(const char *name);
 profile_t profile_get_by_type(enum ProfileType prof);

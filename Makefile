@@ -6,7 +6,9 @@ LDFLAGS+=-pthread
 HEADERS := $(wildcard *.h)
 BUILD_FOLDER=$(PWD)/build
 SOURCES=profile.c frame.c tester.c histogram.c report.c platform.c timing.c
+TEST_SOURCES=$(wildcard tests/test_*.c)
 OBJECTS=$(addprefix $(BUILD_FOLDER)/,$(SOURCES:.c=.o))
+ALL_FILES=$(SOURCES) $(HEADERS) $(TEST_SOURCES)
 
 all: $(BUILD_FOLDER) $(BUILD_FOLDER)/tframetest
 
@@ -42,9 +44,12 @@ coverage:
 	lcov --capture --directory "$(BUILD_FOLDER)/tests-coverage" --output-file "$(BUILD_FOLDER)/test-coverage.info" -exclude "$(shell realpath "$(PWD)/tests")/*" --exclude "/usr/*"
 	genhtml "$(BUILD_FOLDER)/test-coverage.info" --output-directory "$(BUILD_FOLDER)/coverage-report"
 
+format:
+	clang-format -i $(ALL_FILES)
+
 clean:
 	make -C tests clean
 	rm -rf $(BUILD_FOLDER)
 	rm -f *.o tframetest tframetest.exe libtframetest.a *.gcno *.gcda *.gcov
 
-.PHONY: all clean release test dist win win64 coverage
+.PHONY: all clean release test dist win win64 coverage format

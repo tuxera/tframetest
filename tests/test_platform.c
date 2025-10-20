@@ -34,8 +34,7 @@
 
 #define NAME_MAX 512
 
-typedef struct test_platform_file_t
-{
+typedef struct test_platform_file_t {
 	int fd;
 	int open;
 	char name[NAME_MAX];
@@ -48,7 +47,7 @@ static test_platform_file_t *files = NULL;
 static size_t file_cnt = 0;
 
 static inline size_t test_platform_find_file(const char *fname,
-		test_platform_file_t **file)
+					     test_platform_file_t **file)
 {
 	size_t i;
 
@@ -63,8 +62,8 @@ static inline size_t test_platform_find_file(const char *fname,
 	return 0;
 }
 
-static inline platform_handle_t test_platform_open(const char *fname,
-	platform_open_flags_t flags, int mode)
+static inline platform_handle_t
+test_platform_open(const char *fname, platform_open_flags_t flags, int mode)
 {
 	size_t idx = 0;
 
@@ -108,7 +107,7 @@ static inline int test_platform_close(platform_handle_t f)
 }
 
 static inline size_t test_platform_write(platform_handle_t handle,
-		const char *buf, size_t size)
+					 const char *buf, size_t size)
 {
 	test_platform_file_t *f;
 	size_t new_size;
@@ -131,7 +130,7 @@ static inline size_t test_platform_write(platform_handle_t handle,
 }
 
 static inline size_t test_platform_read(platform_handle_t handle, char *buf,
-		size_t size)
+					size_t size)
 {
 	test_platform_file_t *f;
 	size_t cnt;
@@ -219,8 +218,8 @@ static inline int test_platform_stat(const char *fname, platform_stat_t *st)
 	return 0;
 }
 
-int test_platform_thread_create(uint64_t *thread_id, void*(*start)(void*),
-		void *arg)
+int test_platform_thread_create(uint64_t *thread_id, void *(*start)(void *),
+				void *arg)
 {
 	return -1;
 }
@@ -254,7 +253,6 @@ static platform_t test_platform = {
 	.thread_cancel = test_platform_thread_cancel,
 	.thread_join = test_platform_thread_join,
 };
-
 
 const platform_t *test_platform_get(void)
 {
@@ -308,4 +306,3 @@ int __wrap_printf(const char *fmt, ...)
 	va_start(ap, fmt);
 	return vprintf(fmt, ap);
 }
-

@@ -28,7 +28,9 @@
 #include "unittest.h"
 #include "frame.h"
 
-static profile_t default_test_profile = { "SD-32bit-cmp", PROF_SD, 720, 480, 4, 0 };
+static profile_t default_test_profile = {
+	"SD-32bit-cmp", PROF_SD, 720, 480, 4, 0
+};
 
 profile_t profile_get_by_name(const char *name)
 {
@@ -55,7 +57,7 @@ size_t profile_count(void)
 
 void test_setup(void **state)
 {
-	*state = (void*)test_platform_get();
+	*state = (void *)test_platform_get();
 }
 
 void test_teardown(void **state)
@@ -95,12 +97,12 @@ int test_frame_fill(void **state)
 
 	/* Default fill with 't' */
 	for (i = 0; i < frm->size; i++)
-		TEST_ASSERT_EQI(i, ((unsigned char*)frm->data)[i], 't');
+		TEST_ASSERT_EQI(i, ((unsigned char *)frm->data)[i], 't');
 
 	/* Test fill works */
 	TEST_ASSERT_EQ(frame_fill(frm, 0x42), frm->size);
 	for (i = 0; i < frm->size; i++)
-		TEST_ASSERT_EQI(i, ((unsigned char*)frm->data)[i], 0x42);
+		TEST_ASSERT_EQI(i, ((unsigned char *)frm->data)[i], 0x42);
 
 	frame_destroy(platform, frm);
 
@@ -121,25 +123,26 @@ int test_frame_write_read(void **state)
 	TEST_ASSERT(frm_read);
 
 	TEST_ASSERT_EQ(frame_fill(frm, 0x42), frm->size);
-	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 0x42);
-	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 't');
+	TEST_ASSERT_EQ(((unsigned char *)frm->data)[0], 0x42);
+	TEST_ASSERT_EQ(((unsigned char *)frm_read->data)[0], 't');
 
-	fd = platform->open("tst1", PLATFORM_OPEN_WRITE |
-			PLATFORM_OPEN_CREATE |
-			PLATFORM_OPEN_DIRECT, 0666);
+	fd = platform->open("tst1",
+			    PLATFORM_OPEN_WRITE | PLATFORM_OPEN_CREATE |
+				    PLATFORM_OPEN_DIRECT,
+			    0666);
 	fw = frame_write(platform, fd, frm);
 	TEST_ASSERT_EQ(fw, frm->size);
 	platform->close(fd);
 
-	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 't');
+	TEST_ASSERT_EQ(((unsigned char *)frm_read->data)[0], 't');
 
-	fd = platform->open("tst1", PLATFORM_OPEN_READ |
-			PLATFORM_OPEN_DIRECT, 0666);
+	fd = platform->open("tst1", PLATFORM_OPEN_READ | PLATFORM_OPEN_DIRECT,
+			    0666);
 	fw = frame_read(platform, fd, frm_read);
 	TEST_ASSERT_EQ(fw, frm->size);
 
-	TEST_ASSERT_EQ(((unsigned char*)frm->data)[0], 0x42);
-	TEST_ASSERT_EQ(((unsigned char*)frm_read->data)[0], 0x42);
+	TEST_ASSERT_EQ(((unsigned char *)frm->data)[0], 0x42);
+	TEST_ASSERT_EQ(((unsigned char *)frm_read->data)[0], 0x42);
 	platform->close(fd);
 
 	frame_destroy(platform, frm);
@@ -158,9 +161,10 @@ int test_frame_from_file(void **state)
 	TEST_ASSERT(!frm);
 
 	frm = gen_default_frame(platform);
-	fd = platform->open("tst2", PLATFORM_OPEN_WRITE |
-			PLATFORM_OPEN_CREATE |
-			PLATFORM_OPEN_DIRECT, 0666);
+	fd = platform->open("tst2",
+			    PLATFORM_OPEN_WRITE | PLATFORM_OPEN_CREATE |
+				    PLATFORM_OPEN_DIRECT,
+			    0666);
 	(void)frame_write(platform, fd, frm);
 	platform->close(fd);
 	frame_destroy(platform, frm);
@@ -170,9 +174,10 @@ int test_frame_from_file(void **state)
 	frame_destroy(platform, frm);
 
 	frm = gen_default_frame(platform);
-	fd = platform->open("tst3", PLATFORM_OPEN_WRITE |
-			PLATFORM_OPEN_CREATE |
-			PLATFORM_OPEN_DIRECT, 0666);
+	fd = platform->open("tst3",
+			    PLATFORM_OPEN_WRITE | PLATFORM_OPEN_CREATE |
+				    PLATFORM_OPEN_DIRECT,
+			    0666);
 	(void)frame_write(platform, fd, NULL);
 	platform->close(fd);
 	frame_destroy(platform, frm);
