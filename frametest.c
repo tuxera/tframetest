@@ -49,6 +49,7 @@ void *run_write_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
 	test_mode_t mode = TEST_MODE_NORM;
+	test_files_t files;
 
 	if (!arg)
 		return NULL;
@@ -59,9 +60,13 @@ void *run_write_test_thread(void *arg)
 		mode = TEST_MODE_REVERSE;
 	else if (info->opts->random)
 		mode = TEST_MODE_RANDOM;
+
+	files = info->opts->single_file ? TEST_FILES_SINGLE :
+					  TEST_FILES_MULTIPLE;
+
 	info->res = tester_run_write(info->platform, info->opts->path,
 				     info->opts->frm, info->start_frame,
-				     info->frames, info->fps, mode);
+				     info->frames, info->fps, mode, files);
 
 	return NULL;
 }
@@ -70,6 +75,7 @@ void *run_read_test_thread(void *arg)
 {
 	thread_info_t *info = (thread_info_t *)arg;
 	test_mode_t mode = TEST_MODE_NORM;
+	test_files_t files;
 
 	if (!arg)
 		return NULL;
@@ -80,9 +86,13 @@ void *run_read_test_thread(void *arg)
 		mode = TEST_MODE_REVERSE;
 	else if (info->opts->random)
 		mode = TEST_MODE_RANDOM;
+
+	files = info->opts->single_file ? TEST_FILES_SINGLE :
+					  TEST_FILES_MULTIPLE;
+
 	info->res = tester_run_read(info->platform, info->opts->path,
 				    info->opts->frm, info->start_frame,
-				    info->frames, info->fps, mode);
+				    info->frames, info->fps, mode, files);
 
 	return NULL;
 }
@@ -215,11 +225,32 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
+	if (opts->profile.prof == PROF_INVALID &&
+	    opts->stream_prof != PROF_INVALID)
+		opts->profile = profile_get_by_type(opts->stream_prof);
+	else if (opts->profile.prof == PROF_INVALID && opts->frame_size) {
+		opts->profile.prof = PROF_CUSTOM;
+		opts->profile.name = "custom";
+
+		/* Faking the size */
+		opts->profile.width = opts->frame_size;
+		opts->profile.bytes_per_pixel = 1;
+		opts->profile.height = 1;
+		opts->profile.header_size = 0;
+	}
+	if ((opts->mode & TEST_READ) && opts->profile.prof == PROF_INVALID) {
+		fprintf(stderr,
+			"Frame size (-z) is required for streaming test\n");
+		return 1;
+	}
+
 	opts->profile.header_size =
 		(opts->mode & TEST_EMPTY) ? 0 : opts->header_size;
 	if (opts->mode & TEST_WRITE)
 		opts->frm = frame_gen(platform, opts->profile);
 	else if (opts->mode & TEST_READ) {
+		if (opts->single_file)
+			opts->frm = frame_gen(platform, opts->profile);
 		if (!opts->frm) {
 			opts->frm = tester_get_frame_read(platform, opts->path);
 		}
@@ -251,37 +282,42 @@ int run_tests(opts_t *opts)
 	return 0;
 }
 
-int opt_parse_write(opts_t *opt, const char *arg)
+int opt_parse_frame_size_helper(opts_t *opt, const char *arg,
+				enum ProfileType *prof, size_t *sz)
 {
 	char *endp = NULL;
-	size_t sz;
 
 	if (!strcmp(arg, "sd") || !strcmp(arg, "SD")) {
-		opt->prof = PROF_SD;
+		*prof = PROF_SD;
 		return 0;
 	} else if (!strcmp(arg, "hd") || !strcmp(arg, "HD")) {
-		opt->prof = PROF_HD;
+		*prof = PROF_HD;
 		return 0;
 	} else if (!strcmp(arg, "fullhd") || !strcmp(arg, "FULLHD")) {
-		opt->prof = PROF_FULLHD;
+		*prof = PROF_FULLHD;
 		return 0;
 	} else if (!strcmp(arg, "2k") || !strcmp(arg, "2K")) {
-		opt->prof = PROF_2K;
+		*prof = PROF_2K;
 		return 0;
 	} else if (!strcmp(arg, "4k") || !strcmp(arg, "4K")) {
-		opt->prof = PROF_4K;
+		*prof = PROF_4K;
 		return 0;
 	} else if (!strcmp(arg, "8k") || !strcmp(arg, "8K")) {
-		opt->prof = PROF_8K;
+		*prof = PROF_8K;
 		return 0;
 	}
 
-	sz = strtoll(arg, &endp, 10);
-	if (!endp || *endp != 0 || !sz)
+	*sz = strtoll(arg, &endp, 10);
+	if (!endp || *endp != 0 || !*sz)
 		return 1;
-	opt->write_size = sz;
 
 	return 0;
+}
+
+int opt_parse_write(opts_t *opt, const char *arg)
+{
+	return opt_parse_frame_size_helper(opt, arg, &opt->prof,
+					   &opt->write_size);
 }
 
 int opt_parse_profile(opts_t *opt, const char *arg)
@@ -337,6 +373,12 @@ int opt_parse_header_size(opts_t *opt, const char *arg)
 	return parse_arg_size_t(arg, &opt->header_size, 1);
 }
 
+int opt_parse_frame_size(opts_t *opt, const char *arg)
+{
+	return opt_parse_frame_size_helper(opt, arg, &opt->stream_prof,
+					   &opt->frame_size);
+}
+
 void list_profiles(void)
 {
 	size_t cnt = profile_count();
@@ -347,10 +389,8 @@ void list_profiles(void)
 		profile_t prof = profile_get_by_index(i);
 
 		printf("  %s\n", prof.name);
-		printf("     %zux%zu, %zu bits, %zuB header\n",
-		       prof.width, prof.height,
-		       prof.bytes_per_pixel * 8,
-		       prof.header_size);
+		printf("     %zux%zu, %zu bits, %zuB header\n", prof.width,
+		       prof.height, prof.bytes_per_pixel * 8, prof.header_size);
 	}
 }
 
@@ -450,8 +490,8 @@ int main(int argc, char **argv)
 	opts.frames = 1800;
 	opts.header_size = 65536;
 	while (1) {
-		c = getopt_long(argc, argv, "rw:elt:n:f:vmhVc",
-				long_opts, &opt_index);
+		c = getopt_long(argc, argv, "rw:elt:n:f:s:z:vmhVc", long_opts,
+				&opt_index);
 		if (c == -1)
 			break;
 
@@ -497,6 +537,10 @@ int main(int argc, char **argv)
 		case 'r':
 			opts.mode |= TEST_READ;
 			break;
+		case 's':
+			opts.single_file = 1;
+			opts.path = optarg;
+			break;
 		case 't':
 			if (opt_parse_threads(&opts, optarg))
 				goto invalid_short;
@@ -507,6 +551,10 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			if (opt_parse_limit_fps(&opts, optarg))
+				goto invalid_short;
+			break;
+		case 'z':
+			if (opt_parse_frame_size(&opts, optarg))
 				goto invalid_short;
 			break;
 		case 'l':
@@ -551,6 +599,9 @@ invalid_long:
 	return 1;
 
 invalid_short:
-	fprintf(stderr, "Invalid argument for option " "-%c: %s\n", c, optarg);
+	fprintf(stderr,
+		"Invalid argument for option "
+		"-%c: %s\n",
+		c, optarg);
 	return 1;
 }

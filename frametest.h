@@ -29,7 +29,7 @@
 
 enum TestMode {
 	TEST_WRITE = 1 << 0,
-	TEST_READ  = 1 << 1,
+	TEST_READ = 1 << 1,
 	TEST_EMPTY = 1 << 2,
 };
 
@@ -37,7 +37,9 @@ typedef struct opts_t {
 	enum TestMode mode;
 
 	enum ProfileType prof;
+	enum ProfileType stream_prof;
 	size_t write_size;
+	size_t frame_size;
 	profile_t profile;
 
 	frame_t *frm;
@@ -55,6 +57,7 @@ typedef struct opts_t {
 	unsigned int times : 1;
 	unsigned int frametimes : 1;
 	unsigned int histogram : 1;
+	unsigned int single_file : 1;
 } opts_t;
 
 typedef struct test_completion_t {

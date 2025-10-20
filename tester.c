@@ -33,21 +33,41 @@
 
 static inline size_t tester_frame_write(const platform_t *platform,
 					const char *path, frame_t *frame,
-					size_t num, test_completion_t *comp)
+					size_t num, test_files_t files,
+					test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	size_t ret;
 	platform_handle_t f;
 
-	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
-	name[PATH_MAX] = 0;
+	switch (files) {
+	case TEST_FILES_MULTIPLE:
+		snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
+		name[PATH_MAX] = 0;
+		break;
+	case TEST_FILES_SINGLE:
+		snprintf(name, PATH_MAX, "%s", path);
+		name[PATH_MAX] = 0;
+		break;
+	default:
+		return 1;
+	}
 
 	f = platform->open(name,
 			   PLATFORM_OPEN_CREATE | PLATFORM_OPEN_WRITE |
 				   PLATFORM_OPEN_DIRECT,
 			   0666);
+
 	if (f <= 0)
-		return 0;
+		return 1;
+
+	if (files == TEST_FILES_SINGLE) {
+		long pos =
+			platform->seek(f, num * frame->size, PLATFORM_SEEK_SET);
+		if (pos < 0)
+			return 1;
+	}
+
 	comp->open = timing_start();
 
 	ret = frame_write(platform, f, frame);
@@ -64,19 +84,38 @@ static inline size_t tester_frame_write(const platform_t *platform,
 
 static inline size_t tester_frame_read(const platform_t *platform,
 				       const char *path, frame_t *frame,
-				       size_t num, test_completion_t *comp)
+				       size_t num, test_files_t files,
+				       test_completion_t *comp)
 {
 	char name[PATH_MAX + 1];
 	size_t ret;
 	platform_handle_t f;
 
-	snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
-	name[PATH_MAX] = 0;
+	switch (files) {
+	case TEST_FILES_MULTIPLE:
+		snprintf(name, PATH_MAX, "%s/frame%.6zu.tst", path, num);
+		name[PATH_MAX] = 0;
+		break;
+	case TEST_FILES_SINGLE:
+		snprintf(name, PATH_MAX, "%s", path);
+		name[PATH_MAX] = 0;
+		break;
+	default:
+		return 1;
+	}
 
 	f = platform->open(name, PLATFORM_OPEN_READ | PLATFORM_OPEN_DIRECT,
 			   0666);
 	if (f <= 0)
 		return 0;
+
+	if (files == TEST_FILES_SINGLE) {
+		long pos =
+			platform->seek(f, num * frame->size, PLATFORM_SEEK_SET);
+		if (pos < 0)
+			return 1;
+	}
+
 	comp->open = timing_start();
 
 	ret = frame_read(platform, f, frame);
@@ -120,7 +159,8 @@ static inline void shuffle_array(size_t *arr, size_t size)
 
 test_result_t tester_run_write(const platform_t *platform, const char *path,
 			       frame_t *frame, size_t start_frame,
-			       size_t frames, size_t fps, test_mode_t mode)
+			       size_t frames, size_t fps, test_mode_t mode,
+			       test_files_t files)
 {
 	test_result_t res = { 0 };
 	size_t i;
@@ -162,7 +202,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_write(platform, path, frame, frame_idx,
+		if (!tester_frame_write(platform, path, frame, frame_idx, files,
 					&res.completion[i - start_frame]))
 			break;
 		res.completion[i - start_frame].frame = timing_start();
@@ -185,7 +225,7 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 
 test_result_t tester_run_read(const platform_t *platform, const char *path,
 			      frame_t *frame, size_t start_frame, size_t frames,
-			      size_t fps, test_mode_t mode)
+			      size_t fps, test_mode_t mode, test_files_t files)
 {
 	test_result_t res = { 0 };
 	size_t i;
@@ -227,7 +267,7 @@ test_result_t tester_run_read(const platform_t *platform, const char *path,
 			frame_idx = i;
 			break;
 		}
-		if (!tester_frame_read(platform, path, frame, frame_idx,
+		if (!tester_frame_read(platform, path, frame, frame_idx, files,
 				       &res.completion[i - start_frame]))
 			return res;
 		res.completion[i - start_frame].frame = timing_start();

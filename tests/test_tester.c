@@ -138,7 +138,7 @@ static int tester_run_write_read_with(const platform_t *platform, test_mode_t mo
 	f = platform->open("./frame000000.tst", PLATFORM_OPEN_READ, 0);
 	TEST_ASSERT_EQ(f, -1);
 
-	res = tester_run_write(platform, ".", frm, 0, frames, fps, mode);
+	res = tester_run_write(platform, ".", frm, 0, frames, fps, mode, TEST_FILES_MULTIPLE);
 
 	TEST_ASSERT_EQ(res.frames_written, frames);
 	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
@@ -154,7 +154,7 @@ static int tester_run_write_read_with(const platform_t *platform, test_mode_t mo
 	TEST_ASSERT(frm_res);
 
 	res_read = tester_run_read(platform, ".", frm_res, 0, frames,
-			fps, mode);
+			fps, mode, TEST_FILES_MULTIPLE);
 	TEST_ASSERT_EQ(res_read.frames_written, frames);
 	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
 	TEST_ASSERT(res_read.completion);
@@ -197,6 +197,50 @@ int test_tester_run_write_read_fps(void **state)
 	return res;
 }
 
+int test_tester_run_write_read_single_file(void **state)
+{
+	const platform_t *platform = *state;
+	const size_t frames = 5;
+	test_result_t res;
+	test_result_t res_read;
+	platform_handle_t f;
+	frame_t *frm;
+	frame_t *frm_res;
+
+	frm = gen_default_frame(platform);
+	TEST_ASSERT(frm);
+
+	f = platform->open("./single", PLATFORM_OPEN_READ, 0);
+	TEST_ASSERT_EQ(f, -1);
+
+	res = tester_run_write(platform, "./single", frm, 0, frames, 0,
+			       TEST_MODE_NORM, TEST_FILES_SINGLE);
+	TEST_ASSERT_EQ(res.frames_written, frames);
+	TEST_ASSERT_EQ(res.bytes_written, frames * frm->size);
+	TEST_ASSERT(res.completion);
+
+	result_free(platform, &res);
+
+	f = platform->open("./single", PLATFORM_OPEN_READ, 0);
+	TEST_ASSERT_NE(f, -1);
+	platform->close(f);
+
+	frm_res = gen_default_frame(platform);
+
+	res_read = tester_run_read(platform, ".", frm_res, 0, frames, 0,
+				   TEST_MODE_NORM, TEST_FILES_SINGLE);
+	TEST_ASSERT_EQ(res_read.frames_written, frames);
+	TEST_ASSERT_EQ(res_read.bytes_written, frames * frm_res->size);
+	TEST_ASSERT(res_read.completion);
+
+	result_free(platform, &res_read);
+
+	frame_destroy(platform, frm);
+	frame_destroy(platform, frm_res);
+
+	return 0;
+}
+
 int test_tester_result_aggregate(void)
 {
 	test_result_t a = {0};
@@ -233,6 +277,7 @@ int test_tester(void)
 	TESTF(tester_run_write_read, test_setup, test_teardown);
 	TESTF(tester_run_write_read_reverse, test_setup, test_teardown);
 	TESTF(tester_run_write_read_random, test_setup, test_teardown);
+	TESTF(tester_run_write_read_single_file, test_setup, test_teardown);
 	TEST(tester_result_aggregate);
 	TESTF(tester_run_write_read_fps, test_setup, test_teardown);
 

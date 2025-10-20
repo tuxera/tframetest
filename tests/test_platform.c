@@ -155,6 +155,46 @@ static inline size_t test_platform_read(platform_handle_t handle, char *buf,
 	return cnt;
 }
 
+static inline platform_off_t test_platform_seek(platform_handle_t handle,
+						platform_off_t offs,
+						platform_seek_flags_t whence)
+{
+	test_platform_file_t *f;
+
+	if (!handle || handle > file_cnt)
+		return 0;
+
+	f = &files[handle - 1];
+	if (!f->size || !f->data)
+		return 0;
+
+	switch (whence) {
+	case PLATFORM_SEEK_SET:
+		f->pos = offs;
+		break;
+	case PLATFORM_SEEK_CUR:
+		f->pos += offs;
+		break;
+	case PLATFORM_SEEK_END:
+		if (f->size > 0)
+			f->pos = f->size - 1;
+		else
+			f->pos = 0;
+		break;
+	}
+
+	if (f->pos < 0)
+		f->pos = 0;
+	if (f->pos >= f->size) {
+		if (f->size > 0)
+			f->pos = f->size - 1;
+		else
+			f->pos = 0;
+	}
+
+	return f->pos;
+}
+
 static inline int test_platform_usleep(uint64_t us)
 {
 	return usleep((useconds_t)us);
@@ -200,6 +240,7 @@ static platform_t test_platform = {
 	.close = test_platform_close,
 	.write = test_platform_write,
 	.read = test_platform_read,
+	.seek = test_platform_seek,
 
 	.usleep = test_platform_usleep,
 	.stat = test_platform_stat,

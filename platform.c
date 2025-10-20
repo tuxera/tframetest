@@ -189,6 +189,29 @@ static inline size_t generic_read(platform_handle_t handle, char *buf,
 	return read(handle, buf, size);
 }
 
+static inline platform_off_t generic_seek(platform_handle_t handle,
+					  platform_off_t offs,
+					  platform_seek_flags_t whence)
+{
+	int posix_whence;
+
+	switch (whence) {
+	case PLATFORM_SEEK_SET:
+		posix_whence = SEEK_SET;
+		break;
+	case PLATFORM_SEEK_CUR:
+		posix_whence = SEEK_CUR;
+		break;
+	case PLATFORM_SEEK_END:
+		posix_whence = SEEK_END;
+		break;
+	default:
+		return -1;
+	}
+
+	return lseek(handle, offs, posix_whence);
+}
+
 static inline int generic_usleep(uint64_t us)
 {
 	return usleep((useconds_t)us);
@@ -257,6 +280,7 @@ static platform_t default_platform = {
 	.close = generic_close,
 	.write = generic_write,
 	.read = generic_read,
+	.seek = generic_seek,
 	.usleep = generic_usleep,
 	.stat = generic_stat,
 	.calloc = calloc,

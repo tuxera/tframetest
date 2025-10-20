@@ -47,12 +47,18 @@ typedef enum test_mode_t {
 	TEST_MODE_RANDOM,
 } test_mode_t;
 
+typedef enum test_files_t {
+	TEST_FILES_MULTIPLE = 0,
+	TEST_FILES_SINGLE = 1,
+} test_files_t;
+
 test_result_t tester_run_write(const platform_t *platform, const char *path,
-		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
-		test_mode_t mode);
+			       frame_t *frame, size_t start_frame,
+			       size_t frames, size_t fps, test_mode_t mode,
+			       test_files_t files);
 test_result_t tester_run_read(const platform_t *platform, const char *path,
-		frame_t *frame, size_t start_frame, size_t frames, size_t fps,
-		test_mode_t mode);
+			      frame_t *frame, size_t start_frame, size_t frames,
+			      size_t fps, test_mode_t mode, test_files_t files);
 frame_t *tester_get_frame_read(const platform_t *platform, const char *path);
 
 static inline void result_free(const platform_t *platform, test_result_t *res)
@@ -65,7 +71,7 @@ static inline void result_free(const platform_t *platform, test_result_t *res)
 }
 
 static inline int test_result_aggregate(test_result_t *dst,
-		const test_result_t *src)
+					const test_result_t *src)
 {
 	test_completion_t *tmp;
 	size_t frm;
@@ -77,9 +83,8 @@ static inline int test_result_aggregate(test_result_t *dst,
 	if (frm && src->frames_written && src->completion) {
 		tmp = realloc(dst->completion, sizeof(*tmp) * frm);
 		if (tmp) {
-			memcpy(tmp + dst->frames_written,
-					src->completion,
-					sizeof(*tmp) * src->frames_written);
+			memcpy(tmp + dst->frames_written, src->completion,
+			       sizeof(*tmp) * src->frames_written);
 			dst->completion = tmp;
 		}
 	}
