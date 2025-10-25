@@ -110,6 +110,29 @@ static inline size_t win_read(platform_handle_t handle, char *buf, size_t size)
 	return read(handle, buf, size);
 }
 
+static inline platform_off_t win_seek(platform_handle_t handle,
+				      platform_off_t offs,
+				      platform_seek_flags_t whence)
+{
+	int posix_whence;
+
+	switch (whence) {
+	case PLATFORM_SEEK_SET:
+		posix_whence = SEEK_SET;
+		break;
+	case PLATFORM_SEEK_CUR:
+		posix_whence = SEEK_CUR;
+		break;
+	case PLATFORM_SEEK_END:
+		posix_whence = SEEK_END;
+		break;
+	default:
+		return -1;
+	}
+
+	return lseek(handle, offs, posix_whence);
+}
+
 int win_aligned_alloc(void **res, size_t align, size_t size)
 {
 	void *tmp;
@@ -265,6 +288,7 @@ static platform_t default_platform = {
 	.close = win_close,
 	.write = win_write,
 	.read = win_read,
+	.seek = win_seek,
 	.usleep = win_usleep,
 	.stat = win_stat,
 	.calloc = calloc,

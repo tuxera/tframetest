@@ -486,6 +486,7 @@ int main(int argc, char **argv)
 	int opt_index = 0;
 
 	srand(time(NULL));
+	setvbuf(stdout, NULL, _IONBF, 0);
 	opts.threads = 1;
 	opts.frames = 1800;
 	opts.header_size = 65536;
