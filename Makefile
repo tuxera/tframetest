@@ -1,6 +1,6 @@
 MAJOR=3025
 MINOR=10
-PATCH=0
+PATCH=1
 CFLAGS+=-std=c99 -O2 -Wall -Werror -Wpedantic -pedantic-errors -DMAJOR=$(MAJOR) -DMINOR=$(MINOR) -DPATCH=$(PATCH)
 LDFLAGS+=-pthread
 HEADERS := $(wildcard *.h)
@@ -8,7 +8,7 @@ BUILD_FOLDER=$(PWD)/build
 SOURCES=profile.c frame.c tester.c histogram.c report.c platform.c timing.c
 TEST_SOURCES=$(wildcard tests/test_*.c)
 OBJECTS=$(addprefix $(BUILD_FOLDER)/,$(SOURCES:.c=.o))
-ALL_FILES=$(SOURCES) $(HEADERS) $(TEST_SOURCES)
+ALL_FILES=frametest.c $(SOURCES) $(HEADERS) $(TEST_SOURCES)
 
 all: $(BUILD_FOLDER) $(BUILD_FOLDER)/tframetest
 
