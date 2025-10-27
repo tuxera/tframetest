@@ -499,6 +499,7 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
 	opts.threads = 1;
 	opts.frames = 1800;
 	opts.header_size = 65536;
