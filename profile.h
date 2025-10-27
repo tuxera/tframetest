@@ -23,6 +23,8 @@
 
 #include <stddef.h>
 
+#define ALIGN_SIZE 4096
+
 enum ProfileType {
 	PROF_INVALID,
 	PROF_CUSTOM,
@@ -44,8 +46,10 @@ typedef struct profile_t {
 } profile_t;
 
 size_t profile_count(void);
+size_t profile_size(const profile_t *profile);
 profile_t profile_get_by_name(const char *name);
 profile_t profile_get_by_type(enum ProfileType prof);
 profile_t profile_get_by_index(size_t idx);
+profile_t profile_get_by_frame_size(size_t header_size, size_t size);
 
 #endif

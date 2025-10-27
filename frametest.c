@@ -225,34 +225,41 @@ int run_tests(opts_t *opts)
 		fprintf(stderr, "No test profile found!\n");
 		return 1;
 	}
+	opts->profile.header_size =
+		(opts->mode & TEST_EMPTY) ? 0 : opts->header_size;
 	if (opts->profile.prof == PROF_INVALID &&
 	    opts->stream_prof != PROF_INVALID)
 		opts->profile = profile_get_by_type(opts->stream_prof);
 	else if (opts->profile.prof == PROF_INVALID && opts->frame_size) {
-		opts->profile.prof = PROF_CUSTOM;
-		opts->profile.name = "custom";
+		opts->profile = profile_get_by_frame_size(
+			opts->frame_size, opts->profile.header_size);
+		if (opts->profile.prof == PROF_INVALID) {
+			opts->profile.prof = PROF_CUSTOM;
+			opts->profile.name = "custom";
 
-		/* Faking the size */
-		opts->profile.width = opts->frame_size;
-		opts->profile.bytes_per_pixel = 1;
-		opts->profile.height = 1;
-		opts->profile.header_size = 0;
+			/* Faking the size */
+			opts->profile.width = opts->frame_size;
+			opts->profile.bytes_per_pixel = 1;
+			opts->profile.height = 1;
+			opts->profile.header_size = 0;
+		}
 	}
-	if ((opts->mode & TEST_READ) && opts->profile.prof == PROF_INVALID) {
+	if (opts->single_file && (opts->mode & TEST_READ) &&
+	    opts->profile.prof == PROF_INVALID) {
 		fprintf(stderr,
 			"Frame size (-z) is required for streaming test\n");
 		return 1;
 	}
 
-	opts->profile.header_size =
-		(opts->mode & TEST_EMPTY) ? 0 : opts->header_size;
 	if (opts->mode & TEST_WRITE)
 		opts->frm = frame_gen(platform, opts->profile);
 	else if (opts->mode & TEST_READ) {
-		if (opts->single_file)
+		if (opts->single_file || opts->profile.prof != PROF_INVALID)
 			opts->frm = frame_gen(platform, opts->profile);
 		if (!opts->frm) {
-			opts->frm = tester_get_frame_read(platform, opts->path);
+			opts->frm = tester_get_frame_read(
+				platform, opts->path,
+				opts->profile.header_size);
 		}
 		if (!opts->frm) {
 			fprintf(stderr, "Can't allocate frame\n");
@@ -402,6 +409,8 @@ static struct option long_opts[] = {
 	{ "write", required_argument, 0, 'w' },
 	{ "read", no_argument, 0, 'r' },
 	{ "empty", no_argument, 0, 'e' },
+	{ "streaming", no_argument, 0, 's' },
+	{ "frame-size", no_argument, 0, 'z' },
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
@@ -423,6 +432,9 @@ static struct long_opt_desc long_opt_descs[] = {
 	{ "write", "Perform write tests, size/profile as parameter" },
 	{ "read", "Perform read tests" },
 	{ "empty", "Perform write tests with empty frames" },
+	{ "streaming", "Perform streaming test to a single file" },
+	{ "frame-size",
+	  "Specify frame size for reading, required for streaming" },
 	{ "list-profiles", "List available profiles" },
 	{ "threads", "Use number of threads (default 1)" },
 	{ "num-frames", "Write number of frames (default 1800)" },

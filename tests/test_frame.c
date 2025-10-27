@@ -55,6 +55,21 @@ size_t profile_count(void)
 	return 1;
 }
 
+size_t profile_size(const profile_t *profile)
+{
+	(void)profile;
+	return default_test_profile.width * default_test_profile.height *
+		       default_test_profile.bytes_per_pixel +
+	       default_test_profile.header_size;
+}
+
+profile_t profile_get_by_frame_size(size_t header_size, size_t size)
+{
+	(void)header_size;
+	(void)size;
+	return default_test_profile;
+}
+
 void test_setup(void **state)
 {
 	*state = (void *)test_platform_get();
@@ -157,7 +172,7 @@ int test_frame_from_file(void **state)
 	frame_t *frm;
 	int fd;
 
-	frm = frame_from_file(platform, "tst1");
+	frm = frame_from_file(platform, "tst1", 0);
 	TEST_ASSERT(!frm);
 
 	frm = gen_default_frame(platform);
@@ -169,7 +184,7 @@ int test_frame_from_file(void **state)
 	platform->close(fd);
 	frame_destroy(platform, frm);
 
-	frm = frame_from_file(platform, "tst2");
+	frm = frame_from_file(platform, "tst2", 0);
 	TEST_ASSERT(frm);
 	frame_destroy(platform, frm);
 
@@ -182,7 +197,7 @@ int test_frame_from_file(void **state)
 	platform->close(fd);
 	frame_destroy(platform, frm);
 
-	frm = frame_from_file(platform, "tst3");
+	frm = frame_from_file(platform, "tst3", 0);
 	TEST_ASSERT(frm);
 
 	frame_destroy(platform, frm);

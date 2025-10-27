@@ -47,7 +47,8 @@ size_t frame_read(const platform_t *platform, platform_handle_t f,
 	return sizeof(*frame);
 }
 
-frame_t *frame_from_file(const platform_t *platform, const char *fname)
+frame_t *frame_from_file(const platform_t *platform, const char *fname,
+			 size_t header_size)
 {
 	(void)platform;
 	(void)fname;
@@ -152,7 +153,7 @@ static int tester_run_write_read_with(const platform_t *platform,
 	TEST_ASSERT_NE(f, -1);
 	platform->close(f);
 
-	frm_res = tester_get_frame_read(platform, ".");
+	frm_res = tester_get_frame_read(platform, ".", 0);
 	TEST_ASSERT(frm_res);
 
 	res_read = tester_run_read(platform, ".", frm_res, 0, frames, fps, mode,

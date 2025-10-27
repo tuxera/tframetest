@@ -43,6 +43,21 @@ static profile_t profiles[] = {
 };
 static size_t profile_cnt = sizeof(profiles) / sizeof(profiles[0]);
 
+size_t profile_size(const profile_t *profile)
+{
+	size_t size;
+
+	size = profile->width * profile->height * profile->bytes_per_pixel;
+	size += profile->header_size;
+	/* Round to direct I/O boundaries */
+	if (size & 0xfff) {
+		size_t extra = size & 0xfff;
+		size += ALIGN_SIZE - extra;
+	}
+
+	return size;
+}
+
 size_t profile_count(void)
 {
 	return profile_cnt;
@@ -75,6 +90,19 @@ profile_t profile_get_by_index(size_t idx)
 {
 	if (idx < profile_cnt)
 		return profiles[idx];
+
+	return profiles[0];
+}
+
+profile_t profile_get_by_frame_size(size_t header_size, size_t size)
+{
+	for (size_t i = 1; i < profile_cnt; i++) {
+		size_t prof_size = profile_size(&profiles[i]);
+		prof_size += header_size;
+
+		if (prof_size == size)
+			return profiles[i];
+	}
 
 	return profiles[0];
 }

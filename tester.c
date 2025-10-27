@@ -130,14 +130,15 @@ static inline size_t tester_frame_read(const platform_t *platform,
 	return ret;
 }
 
-frame_t *tester_get_frame_read(const platform_t *platform, const char *path)
+frame_t *tester_get_frame_read(const platform_t *platform, const char *path,
+			       size_t frame_size)
 {
 	char name[PATH_MAX + 1];
 
 	snprintf(name, PATH_MAX, "%s/frame%.6lu.tst", path, 0UL);
 	name[PATH_MAX] = 0;
 
-	return frame_from_file(platform, name);
+	return frame_from_file(platform, name, frame_size);
 }
 
 static inline void shuffle_array(size_t *arr, size_t size)

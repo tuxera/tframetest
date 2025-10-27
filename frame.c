@@ -29,8 +29,6 @@
 #include <unistd.h>
 #include "frame.h"
 
-#define ALIGN_SIZE 4096
-
 frame_t *frame_gen(const platform_t *platform, profile_t profile)
 {
 	frame_t *res = platform->calloc(1, sizeof(*res));
@@ -39,13 +37,7 @@ frame_t *frame_gen(const platform_t *platform, profile_t profile)
 		return NULL;
 
 	res->profile = profile;
-	res->size = profile.width * profile.height * profile.bytes_per_pixel;
-	res->size += profile.header_size;
-	/* Round to direct I/O boundaries */
-	if (res->size & 0xfff) {
-		size_t extra = res->size & 0xfff;
-		res->size += ALIGN_SIZE - extra;
-	}
+	res->size = profile_size(&profile);
 
 	if (platform->aligned_alloc(&res->data, ALIGN_SIZE, res->size)) {
 		platform->free(res);
@@ -60,7 +52,8 @@ frame_t *frame_gen(const platform_t *platform, profile_t profile)
 	return res;
 }
 
-frame_t *frame_from_file(const platform_t *platform, const char *fname)
+frame_t *frame_from_file(const platform_t *platform, const char *fname,
+			 size_t header_size)
 {
 	platform_stat_t st;
 	frame_t *res;
@@ -81,12 +74,17 @@ frame_t *frame_from_file(const platform_t *platform, const char *fname)
 	if (!res->size)
 		res->profile = profile_get_by_name("empty");
 	else {
-		res->profile.prof = PROF_CUSTOM;
-		res->profile.name = "custom";
-		res->profile.width = res->size;
-		res->profile.bytes_per_pixel = 1;
-		res->profile.height = 1;
-		res->profile.header_size = 0;
+		res->profile =
+			profile_get_by_frame_size(header_size, res->size);
+
+		if (res->profile.prof == PROF_INVALID) {
+			res->profile.prof = PROF_CUSTOM;
+			res->profile.name = "custom";
+			res->profile.width = res->size;
+			res->profile.bytes_per_pixel = 1;
+			res->profile.height = 1;
+			res->profile.header_size = 0;
+		}
 
 		if (platform->aligned_alloc(&res->data, ALIGN_SIZE,
 					    res->size)) {

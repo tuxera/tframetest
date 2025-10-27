@@ -59,7 +59,8 @@ test_result_t tester_run_write(const platform_t *platform, const char *path,
 test_result_t tester_run_read(const platform_t *platform, const char *path,
 			      frame_t *frame, size_t start_frame, size_t frames,
 			      size_t fps, test_mode_t mode, test_files_t files);
-frame_t *tester_get_frame_read(const platform_t *platform, const char *path);
+frame_t *tester_get_frame_read(const platform_t *platform, const char *path,
+			       size_t header_size);
 
 static inline void result_free(const platform_t *platform, test_result_t *res)
 {

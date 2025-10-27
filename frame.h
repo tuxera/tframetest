@@ -33,7 +33,8 @@ typedef struct frame_t {
 } frame_t;
 
 frame_t *frame_gen(const platform_t *platform, profile_t profile);
-frame_t *frame_from_file(const platform_t *platform, const char *fname);
+frame_t *frame_from_file(const platform_t *platform, const char *fname,
+			 size_t header_size);
 
 void frame_destroy(const platform_t *platform, frame_t *frame);
 size_t frame_fill(frame_t *frame, char val);
