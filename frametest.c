@@ -198,14 +198,11 @@ int run_test_threads(const platform_t *platform, const char *tst,
 	return res;
 }
 
-int run_tests(opts_t *opts)
+int run_resolve_opts(const platform_t *platform, opts_t *opts)
 {
-	const platform_t *platform = NULL;
-
 	if (!opts)
 		return 1;
 
-	platform = platform_get();
 	if (opts->profile.prof == PROF_INVALID && opts->prof != PROF_INVALID) {
 		opts->profile = profile_get_by_type(opts->prof);
 	}
@@ -222,8 +219,10 @@ int run_tests(opts_t *opts)
 		opts->profile.header_size = 0;
 	}
 	if ((opts->mode & TEST_WRITE) && opts->profile.prof == PROF_INVALID) {
-		fprintf(stderr, "No test profile found!\n");
-		return 1;
+		if (opts->profile.prof != PROF_INVALID || !opts->frame_size) {
+			fprintf(stderr, "No test profile found!\n");
+			return 1;
+		}
 	}
 	opts->profile.header_size =
 		(opts->mode & TEST_EMPTY) ? 0 : opts->header_size;
@@ -251,9 +250,9 @@ int run_tests(opts_t *opts)
 		return 1;
 	}
 
-	if (opts->mode & TEST_WRITE)
+	if (opts->mode & TEST_WRITE) {
 		opts->frm = frame_gen(platform, opts->profile);
-	else if (opts->mode & TEST_READ) {
+	} else if (opts->mode & TEST_READ) {
 		if (opts->single_file || opts->profile.prof != PROF_INVALID)
 			opts->frm = frame_gen(platform, opts->profile);
 		if (!opts->frm) {
@@ -267,6 +266,20 @@ int run_tests(opts_t *opts)
 		}
 		opts->profile = opts->frm->profile;
 	}
+
+	return 0;
+}
+
+int run_tests(opts_t *opts)
+{
+	const platform_t *platform = NULL;
+
+	platform = platform_get();
+
+	if (run_resolve_opts(platform, opts) != 0) {
+		return 1;
+	}
+
 	if (!opts->csv)
 		printf("Profile: %s\n", opts->profile.name);
 
@@ -284,6 +297,8 @@ int run_tests(opts_t *opts)
 	if (opts->mode & TEST_READ) {
 		run_test_threads(platform, "read", opts, &run_read_test_thread);
 	}
+	if ((opts->mode & (TEST_READ | TEST_WRITE)) == 0)
+		fprintf(stderr, "Nothing to do, no write/read defined\n");
 	frame_destroy(platform, opts->frm);
 
 	return 0;
@@ -404,13 +419,15 @@ void list_profiles(void)
 struct long_opt_desc {
 	const char *name;
 	const char *desc;
+	const char *argname;
 };
 static struct option long_opts[] = {
-	{ "write", required_argument, 0, 'w' },
+	{ "write", optional_argument, 0, 'w' },
 	{ "read", no_argument, 0, 'r' },
 	{ "empty", no_argument, 0, 'e' },
-	{ "streaming", no_argument, 0, 's' },
-	{ "frame-size", no_argument, 0, 'z' },
+	{ "streaming", required_argument, 0, 's' },
+	{ "frame-size", required_argument, 0, 'z' },
+	{ "header-size", required_argument, 0, 'x' },
 	{ "list-profiles", no_argument, 0, 'l' },
 	{ "threads", required_argument, 0, 't' },
 	{ "num-frames", required_argument, 0, 'n' },
@@ -429,27 +446,29 @@ static struct option long_opts[] = {
 };
 static size_t long_opts_cnt = sizeof(long_opts) / sizeof(long_opts[0]);
 static struct long_opt_desc long_opt_descs[] = {
-	{ "write", "Perform write tests, size/profile as parameter" },
-	{ "read", "Perform read tests" },
-	{ "empty", "Perform write tests with empty frames" },
-	{ "streaming", "Perform streaming test to a single file" },
+	{ "write", "Perform write tests, size/profile as parameter", "[SIZE]" },
+	{ "read", "Perform read tests", NULL },
+	{ "empty", "Perform write tests with empty frames", NULL },
+	{ "streaming", "Perform streaming test to a single file", "FILE" },
 	{ "frame-size",
-	  "Specify frame size for reading, required for streaming" },
-	{ "list-profiles", "List available profiles" },
-	{ "threads", "Use number of threads (default 1)" },
-	{ "num-frames", "Write number of frames (default 1800)" },
-	{ "fps", "Limit frame rate to frames per second" },
-	{ "reverse", "Access files in reverse order" },
-	{ "random", "Access files in random order" },
-	{ "csv", "Output results in CSV format" },
-	{ "no-csv-header", "Do not print CSV header" },
-	{ "header", "Frame header size (default 64k)" },
-	{ "times", "Show breakdown of completion times (open/io/close)" },
-	{ "frametimes", "Show detailed timings of every frames in CSV format" },
-	{ "histogram", "Show histogram of completion times at the end" },
-	{ "version", "Display version information" },
-	{ "help", "Display this help" },
-	{ 0, 0 },
+	  "Specify frame size for reading, required for streaming", "SIZE" },
+	{ "header-size", "Specify header size for frames (default 65536)" },
+	{ "list-profiles", "List available profiles", NULL },
+	{ "threads", "Use number of threads (default 1)", "CNT" },
+	{ "num-frames", "Write number of frames (default 1800)", "CNT" },
+	{ "fps", "Limit frame rate to frames per second", "FPS" },
+	{ "reverse", "Access files in reverse order", NULL },
+	{ "random", "Access files in random order", NULL },
+	{ "csv", "Output results in CSV format", NULL },
+	{ "no-csv-header", "Do not print CSV header", NULL },
+	{ "header", "Frame header size (default 64k)", "SIZE" },
+	{ "times", "Show breakdown of completion times (open/io/close)", NULL },
+	{ "frametimes", "Show detailed timings of every frames in CSV format",
+	  NULL },
+	{ "histogram", "Show histogram of completion times at the end", NULL },
+	{ "version", "Display version information", NULL },
+	{ "help", "Display this help", NULL },
+	{ 0, 0, NULL },
 };
 
 #define XSTRING(x) #x
@@ -481,6 +500,10 @@ void usage(const char *name)
 
 		p += strlen(long_opts[i].name);
 		fprintf(stderr, "--%s", long_opts[i].name);
+		if (long_opt_descs[i].argname) {
+			fprintf(stderr, " %s", long_opt_descs[i].argname);
+			p += strlen(long_opt_descs[i].argname) + 1;
+		}
 
 		if (p < DESC_POS)
 			p = DESC_POS - p;
@@ -496,6 +519,7 @@ int main(int argc, char **argv)
 	opts_t opts = { 0 };
 	int c = 0;
 	int opt_index = 0;
+	int write_parse = 0;
 
 	srand(time(NULL));
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -504,7 +528,7 @@ int main(int argc, char **argv)
 	opts.frames = 1800;
 	opts.header_size = 65536;
 	while (1) {
-		c = getopt_long(argc, argv, "rw:elt:n:f:s:z:vmhVc", long_opts,
+		c = getopt_long(argc, argv, "rwelt:n:f:s:z:x:vmhVc", long_opts,
 				&opt_index);
 		if (c == -1)
 			break;
@@ -537,10 +561,16 @@ int main(int argc, char **argv)
 			opts.random = 1;
 			break;
 		case 'w':
-			if (opt_parse_write(&opts, optarg)) {
-				if (opt_parse_profile(&opts, optarg)) {
-					/* Could not parse profile, just skip */
+			write_parse = 1;
+			if (optarg != NULL) {
+				if (opt_parse_write(&opts, optarg)) {
+					if (opt_parse_profile(&opts, optarg)) {
+						printf("Invalid write profile: %s\n",
+						       optarg);
+						return 1;
+					}
 				}
+				write_parse = 0;
 			}
 			opts.mode |= TEST_WRITE;
 			break;
@@ -571,6 +601,10 @@ int main(int argc, char **argv)
 			if (opt_parse_frame_size(&opts, optarg))
 				goto invalid_short;
 			break;
+		case 'x':
+			if (opt_parse_header_size(&opts, optarg))
+				goto invalid_short;
+			break;
 		case 'l':
 			list_profiles();
 			return 0;
@@ -580,6 +614,22 @@ int main(int argc, char **argv)
 		default:
 			printf("Invalid option: %c\n", c);
 			return 1;
+		}
+		if (write_parse) {
+			if (optind < argc && argv[optind][0] != '-') {
+				/* Support optional write size */
+				if (opt_parse_write(&opts, argv[optind])) {
+					if (opt_parse_profile(&opts,
+							      argv[optind])) {
+						/* Could not parse profile, just skip */
+						printf("Invalid write profile: %s\n",
+						       argv[optind]);
+						return 1;
+					}
+				}
+				++optind;
+				write_parse = 0;
+			}
 		}
 	}
 	if (optind < argc) {
@@ -593,6 +643,13 @@ int main(int argc, char **argv)
 				return 1;
 			}
 		}
+	}
+	if ((opts.mode & TEST_WRITE) && opts.frame_size > 0) {
+		if (opts.write_size != 0 && opts.write_size != opts.frame_size)
+			printf("Warning: Both write size (%zu) and frame size (%zu) given, "
+			       "using frame size.\n",
+			       opts.write_size, opts.frame_size);
+		opts.write_size = opts.frame_size;
 	}
 	if (opts.random && opts.reverse) {
 		printf("ERROR: --random and --reverse are mutually exclusive, "

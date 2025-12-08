@@ -1,5 +1,5 @@
 CFLAGS+=-std=c99 -O0 -g -Wall -Werror -Wpedantic -pedantic-errors -I. -I..
-TESTS=frame histogram profile tester
+TESTS=frame histogram profile tester frametest
 BUILD_FOLDER:=$(PWD)/build/tests
 TEST_BINS=$(addprefix $(BUILD_FOLDER)/test_,$(TESTS))
 OBJECTS=$(addsuffix .o,$(TEST_BINS))
